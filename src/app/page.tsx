@@ -56,6 +56,10 @@ export default async function Home() {
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 text-center">
         <HeroBackground />
 
+        <div className="absolute top-6 left-1/2 z-10 -translate-x-1/2 text-[11px] uppercase tracking-[0.3em] text-slate-300">
+          Creado por <span className="font-semibold text-gold-400">Brayan Bravo</span>
+        </div>
+
         <div className="relative z-10 flex flex-col items-center">
           <Logo size={96} className="mb-6 drop-shadow-2xl" />
 
