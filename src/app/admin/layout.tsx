@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { UserMenu } from "@/components/UserMenu";
 
 export default async function AdminLayout({
   children,
@@ -15,9 +16,11 @@ export default async function AdminLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, display_name")
     .eq("id", user.id)
     .maybeSingle();
+
+  const nombre = profile?.display_name ?? user.email?.split("@")[0] ?? "Admin";
 
   if (!profile?.is_admin) {
     return (
@@ -43,12 +46,23 @@ export default async function AdminLayout({
             <NavLink href="/admin">Resultados</NavLink>
             <NavLink href="/admin/participantes">Participantes</NavLink>
           </div>
-          <Link
-            href="/jugar"
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-slate-300 transition hover:bg-white/5"
-          >
-            ← App
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/jugar"
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/5"
+            >
+              ← App
+            </Link>
+            <UserMenu
+              name={nombre}
+              email={user.email ?? ""}
+              navLinks={[
+                { href: "/admin", label: "Resultados" },
+                { href: "/admin/participantes", label: "Participantes" },
+                { href: "/jugar", label: "Ir a la app" },
+              ]}
+            />
+          </div>
         </nav>
       </header>
       <div className="flex-1">{children}</div>
