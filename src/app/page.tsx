@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
 import { Logo } from "@/components/Logo";
+import { HeroBackground } from "@/components/HeroBackground";
 import { createClient } from "@/lib/supabase/server";
 
 const SCORING = [
@@ -50,108 +51,123 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-14 sm:py-20">
-      {/* Hero */}
-      <section className="flex flex-col items-center text-center">
-        <Logo size={72} className="mb-5" />
-        <span className="mb-4 rounded-full border border-gold-400/40 bg-gold-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-400">
-          Copa Mundial 2026
-        </span>
-        <h1 className="max-w-3xl text-4xl font-black leading-tight text-white sm:text-6xl">
-          La Quiniela del{" "}
-          <span className="bg-gradient-to-r from-pitch-500 to-gold-400 bg-clip-text text-transparent">
-            Mundial 2026
-          </span>
-        </h1>
-        <p className="mt-5 max-w-xl text-lg text-slate-300">
-          Predice los <strong className="text-white">104 partidos</strong>, arma
-          tu propio cuadro hasta la final y compite por el primer lugar del
-          ranking en vivo.
-        </p>
+    <main className="flex flex-col">
+      {/* ===== Hero a pantalla completa ===== */}
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 text-center">
+        <HeroBackground />
 
-        <div className="mt-9 flex flex-col items-center gap-3">
-          <span className="text-xs uppercase tracking-widest text-slate-400">
-            Arranca en
-          </span>
-          <Countdown />
-        </div>
+        <div className="relative z-10 flex flex-col items-center">
+          <Logo size={96} className="mb-6 drop-shadow-2xl" />
 
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          {user ? (
-            <Link
-              href="/jugar"
-              className="rounded-xl bg-pitch-500 px-7 py-3.5 font-semibold text-navy-950 transition hover:bg-pitch-600"
-            >
-              Ir a mi quiniela →
-            </Link>
-          ) : (
-            <>
+          <h1 className="text-5xl font-black leading-none tracking-tight text-white drop-shadow-lg sm:text-7xl">
+            WORLD CUP
+          </h1>
+          <span className="mt-1 bg-gradient-to-b from-cyan-300 to-blue-600 bg-clip-text text-6xl font-black leading-none tracking-tight text-transparent sm:text-8xl">
+            2026
+          </span>
+          <span className="mt-4 text-sm font-medium uppercase tracking-[0.5em] text-slate-300">
+            La Quiniela
+          </span>
+
+          <div className="mt-10 flex flex-col items-center gap-4">
+            {user ? (
               <Link
-                href="/registro"
-                className="rounded-xl bg-pitch-500 px-7 py-3.5 font-semibold text-navy-950 transition hover:bg-pitch-600"
+                href="/jugar"
+                className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-12 py-4 text-lg font-bold uppercase tracking-wide text-white shadow-xl shadow-orange-500/30 transition hover:brightness-110"
               >
-                Crear mi quiniela
+                Ir a mi quiniela
               </Link>
+            ) : (
               <Link
                 href="/login"
-                className="rounded-xl border border-white/15 px-7 py-3.5 font-semibold text-white transition hover:bg-white/5"
+                className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-12 py-4 text-lg font-bold uppercase tracking-wide text-white shadow-xl shadow-orange-500/30 transition hover:brightness-110"
               >
-                Ya tengo cuenta
+                Inicia sesión
               </Link>
-            </>
-          )}
+            )}
+            <p className="max-w-xs text-sm text-slate-400">
+              {user ? (
+                "¡Listo para competir! Entra a llenar tus pronósticos."
+              ) : (
+                <>
+                  ¿No tienes cuenta?{" "}
+                  <Link
+                    href="/registro"
+                    className="font-semibold text-white underline-offset-4 hover:underline"
+                  >
+                    Regístrate
+                  </Link>{" "}
+                  para competir con tus amigos.
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="mt-12 flex flex-col items-center gap-2">
+            <span className="text-[11px] uppercase tracking-widest text-slate-400">
+              Arranca en
+            </span>
+            <Countdown />
+          </div>
+        </div>
+
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce text-slate-400">
+          ↓
         </div>
       </section>
 
-      {/* Scoring */}
-      <section>
-        <h2 className="mb-6 text-center text-2xl font-bold text-white">
-          Sistema de puntuación
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {SCORING.map((s) => (
-            <div
-              key={s.title}
-              className={`rounded-2xl bg-gradient-to-b ${s.color} to-transparent p-5 ring-1`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-3xl">{s.icon}</span>
-                <span className="font-mono text-lg font-bold text-white">
-                  {s.pts}
-                </span>
+      {/* ===== Contenido (scroll) ===== */}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-20">
+        {/* Puntuación */}
+        <section>
+          <h2 className="mb-6 text-center text-2xl font-bold text-white">
+            Sistema de puntuación
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {SCORING.map((s) => (
+              <div
+                key={s.title}
+                className={`rounded-2xl bg-gradient-to-b ${s.color} to-transparent p-5 ring-1`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl">{s.icon}</span>
+                  <span className="font-mono text-lg font-bold text-white">
+                    {s.pts}
+                  </span>
+                </div>
+                <h3 className="mt-3 font-semibold text-white">{s.title}</h3>
+                <p className="mt-1 text-sm text-slate-300">{s.desc}</p>
               </div>
-              <h3 className="mt-3 font-semibold text-white">{s.title}</h3>
-              <p className="mt-1 text-sm text-slate-300">{s.desc}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 text-center text-sm text-slate-400">
-          ⚠️ En eliminatorias cuenta el resultado de los 90 min (o fin del
-          alargue). Los penales solo definen quién avanza, no dan puntos.
-        </p>
-      </section>
+            ))}
+          </div>
+          <p className="mt-4 text-center text-sm text-slate-400">
+            ⚠️ En eliminatorias cuenta el resultado de los 90 min (o fin del
+            alargue). Los penales solo definen quién avanza, no dan puntos.
+          </p>
+        </section>
 
-      {/* Calendar */}
-      <section>
-        <h2 className="mb-6 text-center text-2xl font-bold text-white">
-          El camino a la final
-        </h2>
-        <div className="mx-auto grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
-          {CALENDAR.map(([stage, count]) => (
-            <div
-              key={stage}
-              className="rounded-xl border border-white/10 bg-navy-900/50 px-4 py-3 text-center"
-            >
-              <div className="text-sm font-semibold text-white">{stage}</div>
-              <div className="text-xs text-slate-400">{count}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+        {/* Calendario */}
+        <section>
+          <h2 className="mb-6 text-center text-2xl font-bold text-white">
+            El camino a la final
+          </h2>
+          <div className="mx-auto grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
+            {CALENDAR.map(([stage, count]) => (
+              <div
+                key={stage}
+                className="rounded-xl border border-white/10 bg-navy-900/50 px-4 py-3 text-center"
+              >
+                <div className="text-sm font-semibold text-white">{stage}</div>
+                <div className="text-xs text-slate-400">{count}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <footer className="border-t border-white/10 pt-8 text-center text-sm text-slate-500">
-        Quiniela Mundial 2026 · Hecho para la banda ⚽
-      </footer>
+        <footer className="border-t border-white/10 pt-8 text-center text-sm text-slate-500">
+          Quiniela Mundial 2026 · Hecho para la banda ⚽
+        </footer>
+      </div>
     </main>
   );
 }
