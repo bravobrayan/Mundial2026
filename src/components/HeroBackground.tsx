@@ -15,7 +15,7 @@ export function HeroBackground() {
     <div className="absolute inset-0 overflow-hidden">
       {!videoFailed ? (
         <video
-          className="h-full w-full object-cover"
+          className="h-full w-full scale-110 object-cover blur-[5px]"
           autoPlay
           muted
           loop
@@ -30,7 +30,7 @@ export function HeroBackground() {
         <img
           src="/brand/hero.jpg"
           alt=""
-          className="h-full w-full object-cover"
+          className="h-full w-full scale-110 object-cover blur-[5px]"
           onError={() => setImgFailed(true)}
         />
       ) : (
