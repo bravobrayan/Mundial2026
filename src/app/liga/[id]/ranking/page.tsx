@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ExpelButton } from "./ExpelButton";
 
 type Row = {
   user_id: string;
@@ -26,6 +27,13 @@ export default async function LigaRankingPage({
   });
   const rows = (data ?? []) as Row[];
 
+  const { data: league } = await supabase
+    .from("leagues")
+    .select("owner_id")
+    .eq("id", id)
+    .maybeSingle();
+  const isOwner = league?.owner_id === user.id;
+
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
       <h1 className="text-2xl font-black text-white">Ranking de la liga</h1>
@@ -50,6 +58,7 @@ export default async function LigaRankingPage({
                 <th className="px-2 py-3 text-center font-medium">PJ</th>
                 <th className="px-2 py-3 text-center font-medium">Exactos</th>
                 <th className="px-4 py-3 text-right font-medium">Pts</th>
+                {isOwner && <th className="px-2 py-3" />}
               </tr>
             </thead>
             <tbody>
@@ -81,6 +90,17 @@ export default async function LigaRankingPage({
                     <td className="px-4 py-3 text-right text-lg font-black tabular-nums text-white">
                       {r.points}
                     </td>
+                    {isOwner && (
+                      <td className="px-2 py-3 text-right">
+                        {!me && (
+                          <ExpelButton
+                            leagueId={id}
+                            userId={r.user_id}
+                            name={r.display_name}
+                          />
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
