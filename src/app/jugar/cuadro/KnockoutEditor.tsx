@@ -153,7 +153,7 @@ function MatchCard({
       {defined ? (
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <span className="flex items-center justify-end gap-1.5 text-right text-sm font-medium text-white">
-            <Flag flag={match.home?.flag} className="h-4 w-6" /> {match.home?.name}
+            <Flag flag={match.home?.flag} className="w-6" /> {match.home?.name}
           </span>
           <div className="flex items-center gap-1.5">
             <Score
@@ -169,7 +169,7 @@ function MatchCard({
             />
           </div>
           <span className="flex items-center gap-1.5 text-left text-sm font-medium text-white">
-            {match.away?.name} <Flag flag={match.away?.flag} className="h-4 w-6" />
+            {match.away?.name} <Flag flag={match.away?.flag} className="w-6" />
           </span>
         </div>
       ) : (

@@ -165,7 +165,7 @@ export function GroupEditor({
                   >
                     <td className="py-1.5">
                       <span className="mr-1 text-slate-500">{i + 1}</span>
-                      <Flag flag={t.flag} className="mr-1.5 h-3.5 w-5 align-[-2px]" />
+                      <Flag flag={t.flag} className="mr-1.5 w-5" />
                       {t.name}
                     </td>
                     <td className="text-center tabular-nums">{r.pj}</td>
@@ -247,7 +247,7 @@ function TeamSide({
         align === "right" ? "flex-row-reverse text-right" : "text-left"
       }`}
     >
-      <Flag flag={team?.flag} className="h-5 w-7" />
+      <Flag flag={team?.flag} className="w-7" />
       <span className="text-sm font-medium text-white">{team?.name}</span>
     </div>
   );
