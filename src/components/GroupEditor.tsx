@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import type { Match, PredMap, Team } from "@/lib/quiniela/types";
 import { computeRows, sortStanding } from "@/lib/quiniela/standings";
-import { isMatchLocked } from "@/lib/quiniela/lock";
 import { Flag } from "@/components/Flag";
 import { saveGroup } from "@/app/liga/actions";
 
@@ -23,6 +22,7 @@ export function GroupEditor({
   matches,
   initialPreds,
   initialOrder,
+  locked,
 }: {
   leagueId: string;
   grupo: string;
@@ -30,6 +30,7 @@ export function GroupEditor({
   matches: Match[];
   initialPreds: PredMap;
   initialOrder: number[];
+  locked: boolean;
 }) {
   const teamById = useMemo(
     () => Object.fromEntries(teams.map((t) => [t.id, t])) as Record<number, Team>,
@@ -100,7 +101,6 @@ export function GroupEditor({
           const home = teamById[m.home_team_id!];
           const away = teamById[m.away_team_id!];
           const p = preds[m.id] ?? { home: null, away: null };
-          const lock = isMatchLocked(m.kickoff);
           return (
             <div
               key={m.id}
@@ -109,7 +109,6 @@ export function GroupEditor({
               <div className="mb-2 flex items-center justify-between text-[11px] text-slate-400">
                 <span>
                   J{m.matchday} · {fmt.format(new Date(m.kickoff))}
-                  {lock ? " · 🔒 iniciado" : ""}
                 </span>
                 <span>{m.stadium}</span>
               </div>
@@ -119,13 +118,13 @@ export function GroupEditor({
                   <Score
                     value={p.home}
                     onChange={(v) => setScore(m.id, "home", v)}
-                    disabled={lock}
+                    disabled={locked}
                   />
                   <span className="text-slate-500">-</span>
                   <Score
                     value={p.away}
                     onChange={(v) => setScore(m.id, "away", v)}
-                    disabled={lock}
+                    disabled={locked}
                   />
                 </div>
                 <TeamSide team={away} align="left" />
@@ -183,7 +182,9 @@ export function GroupEditor({
                         <button
                           onClick={() => move(i, -1)}
                           disabled={
-                            i === 0 || rows[sorted[i - 1]]?.pts !== r.pts
+                            locked ||
+                            i === 0 ||
+                            rows[sorted[i - 1]]?.pts !== r.pts
                           }
                           className="text-xs leading-none text-slate-500 enabled:hover:text-white disabled:opacity-20"
                           aria-label="Subir"
@@ -193,6 +194,7 @@ export function GroupEditor({
                         <button
                           onClick={() => move(i, 1)}
                           disabled={
+                            locked ||
                             i === sorted.length - 1 ||
                             rows[sorted[i + 1]]?.pts !== r.pts
                           }
@@ -217,10 +219,14 @@ export function GroupEditor({
         <div className="mt-4">
           <button
             onClick={onSave}
-            disabled={pending}
+            disabled={pending || locked}
             className="w-full rounded-xl bg-pitch-500 px-4 py-3 font-semibold text-navy-950 transition hover:bg-pitch-600 disabled:opacity-60"
           >
-            {pending ? "Guardando…" : "Guardar grupo"}
+            {locked
+              ? "🔒 Cerrado"
+              : pending
+                ? "Guardando…"
+                : "Guardar grupo"}
           </button>
           {msg && (
             <p

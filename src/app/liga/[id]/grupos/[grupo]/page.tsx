@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GROUPS, type Match, type PredMap, type Team } from "@/lib/quiniela/types";
 import { getCompletedGroups } from "@/lib/quiniela/progress";
+import { isGroupLocked } from "@/lib/quiniela/lock";
 import { GroupTabs } from "@/components/GroupTabs";
 import { GroupEditor } from "@/components/GroupEditor";
 
@@ -53,6 +54,7 @@ export default async function GrupoPage({
     initialPreds[p.match_id] = { home: p.home_goals, away: p.away_goals };
   const initialOrder = (pos ?? []).map((p) => p.team_id);
   const completed = await getCompletedGroups(supabase, user.id, id);
+  const locked = isGroupLocked();
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8">
@@ -68,6 +70,13 @@ export default async function GrupoPage({
         <GroupTabs leagueId={id} active={grupo} completed={completed} />
       </div>
 
+      {locked && (
+        <div className="mb-5 rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-3 text-sm text-gold-400">
+          🔒 La fase de grupos está <strong>cerrada</strong> (ya comenzó el
+          Mundial). Solo puedes ver tus pronósticos.
+        </div>
+      )}
+
       <GroupEditor
         leagueId={id}
         grupo={grupo}
@@ -75,6 +84,7 @@ export default async function GrupoPage({
         matches={(matches ?? []) as Match[]}
         initialPreds={initialPreds}
         initialOrder={initialOrder}
+        locked={locked}
       />
     </main>
   );

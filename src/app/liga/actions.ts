@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isMatchLocked } from "@/lib/quiniela/lock";
+import { isMatchLocked, isGroupLocked } from "@/lib/quiniela/lock";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
@@ -26,7 +26,7 @@ async function isMember(
 const clean = (n: number | null) =>
   n == null || Number.isNaN(n) ? null : Math.max(0, Math.min(99, n));
 
-/** Guarda los pronósticos de un grupo en una liga (bloqueo por partido). */
+/** Guarda los pronósticos de un grupo en una liga. Cierre GLOBAL al 1er partido. */
 export async function saveGroup(input: {
   leagueId: string;
   grupo: string;
@@ -41,17 +41,14 @@ export async function saveGroup(input: {
   if (!user) return { ok: false, error: "Sesión expirada. Vuelve a entrar." };
   if (!(await isMember(supabase, user.id, input.leagueId)))
     return { ok: false, error: "No perteneces a esta liga." };
-
-  const { data: kickoffs } = await supabase
-    .from("matches")
-    .select("id, kickoff")
-    .in("id", input.matchIds);
-  const open = new Set(
-    (kickoffs ?? []).filter((m) => !isMatchLocked(m.kickoff)).map((m) => m.id),
-  );
+  if (isGroupLocked())
+    return {
+      ok: false,
+      error: "La fase de grupos ya está cerrada (comenzó el Mundial).",
+    };
 
   const rows = input.predictions
-    .filter((p) => input.matchIds.includes(p.matchId) && open.has(p.matchId))
+    .filter((p) => input.matchIds.includes(p.matchId))
     .map((p) => ({
       user_id: user.id,
       league_id: input.leagueId,
