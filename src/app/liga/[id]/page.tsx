@@ -76,7 +76,12 @@ export default async function LigaDashboard({
         </Link>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <Card
+          title="Partidos"
+          desc="Mira qué predijo cada quien (se revela al empezar)."
+          href={`/liga/${id}/partidos`}
+        />
         <Card
           title="Eliminatorias"
           desc="Predice los cruces reales, de Dieciseisavos a la final."

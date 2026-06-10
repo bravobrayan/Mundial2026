@@ -61,6 +61,7 @@ export default async function LigaLayout({
   const navLinks: NavLinkT[] = [
     { href: `/liga/${id}/grupos`, label: "Grupos" },
     { href: `/liga/${id}/cuadro`, label: "Eliminatorias" },
+    { href: `/liga/${id}/partidos`, label: "Partidos" },
     { href: `/liga/${id}/ranking`, label: "Ranking" },
     { href: "/jugar", label: "Mis ligas" },
   ];
@@ -83,7 +84,7 @@ export default async function LigaLayout({
           </div>
           <div className="flex items-center gap-1">
             <div className="mr-1 hidden items-center gap-1 sm:flex">
-              {navLinks.slice(0, 3).map((l) => (
+              {navLinks.slice(0, 4).map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
