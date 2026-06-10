@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import type { Match, PredMap, Team } from "@/lib/quiniela/types";
 import { computeRows, sortStanding } from "@/lib/quiniela/standings";
 import { isMatchLocked } from "@/lib/quiniela/lock";
+import { Flag } from "@/components/Flag";
 import { saveGroup } from "./actions";
 
 const fmt = new Intl.DateTimeFormat("es-MX", {
@@ -164,7 +165,7 @@ export function GroupEditor({
                   >
                     <td className="py-1.5">
                       <span className="mr-1 text-slate-500">{i + 1}</span>
-                      <span className="mr-1">{t.flag}</span>
+                      <Flag flag={t.flag} className="mr-1.5 h-3.5 w-5 align-[-2px]" />
                       {t.name}
                     </td>
                     <td className="text-center tabular-nums">{r.pj}</td>
@@ -246,7 +247,7 @@ function TeamSide({
         align === "right" ? "flex-row-reverse text-right" : "text-left"
       }`}
     >
-      <span className="text-xl">{team?.flag}</span>
+      <Flag flag={team?.flag} className="h-5 w-7" />
       <span className="text-sm font-medium text-white">{team?.name}</span>
     </div>
   );

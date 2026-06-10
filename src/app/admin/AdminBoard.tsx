@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import type { Team } from "@/lib/quiniela/types";
+import { Flag } from "@/components/Flag";
 import { saveResult, setMatchTeams } from "./actions";
 
 export type AdminMatch = {
@@ -94,6 +95,10 @@ function AdminRow({
 
   const teamName = (id: number | null, embedded: { name: string } | null) =>
     embedded?.name ?? teams.find((t) => t.id === id)?.name ?? "—";
+  const teamFlag = (
+    id: number | null,
+    embedded: { flag: string | null } | null,
+  ) => embedded?.flag ?? teams.find((t) => t.id === id)?.flag ?? null;
 
   function saveTeams() {
     setMsg(null);
@@ -147,8 +152,9 @@ function AdminRow({
       )}
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <span className="text-right text-sm font-medium text-white">
-          {match.home?.flag ?? ""} {teamName(homeId, match.home)}
+        <span className="flex items-center justify-end gap-1.5 text-right text-sm font-medium text-white">
+          <Flag flag={teamFlag(homeId, match.home)} className="h-4 w-6" />{" "}
+          {teamName(homeId, match.home)}
         </span>
         <div className="flex items-center gap-1.5">
           <input
@@ -169,8 +175,9 @@ function AdminRow({
             className="h-10 w-10 rounded-lg border border-white/10 bg-navy-950 text-center font-bold text-white outline-none focus:border-pitch-500 disabled:opacity-40"
           />
         </div>
-        <span className="text-left text-sm font-medium text-white">
-          {teamName(awayId, match.away)} {match.away?.flag ?? ""}
+        <span className="flex items-center gap-1.5 text-left text-sm font-medium text-white">
+          {teamName(awayId, match.away)}{" "}
+          <Flag flag={teamFlag(awayId, match.away)} className="h-4 w-6" />
         </span>
       </div>
 

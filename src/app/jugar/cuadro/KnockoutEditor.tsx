@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import type { PredMap } from "@/lib/quiniela/types";
 import { isMatchLocked } from "@/lib/quiniela/lock";
+import { Flag } from "@/components/Flag";
 import { saveKnockout } from "./actions";
 
 export type KnockoutMatch = {
@@ -151,8 +152,8 @@ function MatchCard({
 
       {defined ? (
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <span className="text-right text-sm font-medium text-white">
-            {match.home?.flag} {match.home?.name}
+          <span className="flex items-center justify-end gap-1.5 text-right text-sm font-medium text-white">
+            <Flag flag={match.home?.flag} className="h-4 w-6" /> {match.home?.name}
           </span>
           <div className="flex items-center gap-1.5">
             <Score
@@ -167,8 +168,8 @@ function MatchCard({
               disabled={lock}
             />
           </div>
-          <span className="text-left text-sm font-medium text-white">
-            {match.away?.name} {match.away?.flag}
+          <span className="flex items-center gap-1.5 text-left text-sm font-medium text-white">
+            {match.away?.name} <Flag flag={match.away?.flag} className="h-4 w-6" />
           </span>
         </div>
       ) : (
