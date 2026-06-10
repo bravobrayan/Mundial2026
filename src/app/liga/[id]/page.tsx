@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCompletedGroups } from "@/lib/quiniela/progress";
+import { GroupLockCountdown } from "@/components/GroupLockCountdown";
 import { ShareCode } from "./ShareCode";
 
 export default async function LigaDashboard({
@@ -38,6 +39,10 @@ export default async function LigaDashboard({
         {members ?? 1} {members === 1 ? "miembro" : "miembros"} · tu quiniela en
         esta liga
       </p>
+
+      <div className="mt-5">
+        <GroupLockCountdown />
+      </div>
 
       {/* Invitar */}
       <div className="mt-6 rounded-2xl border border-white/10 bg-navy-900/50 p-5">

@@ -6,6 +6,7 @@ import {
   UpcomingMatches,
   type UpcomingMatch,
 } from "@/components/UpcomingMatches";
+import { GroupLockCountdown } from "@/components/GroupLockCountdown";
 
 type RankRow = {
   user_id: string;
@@ -53,6 +54,10 @@ export default async function HomePage() {
     <main className="mx-auto w-full max-w-4xl px-5 py-10">
       <p className="text-sm text-slate-400">Hola,</p>
       <h1 className="text-3xl font-black text-white">{nombre} 👋</h1>
+
+      <div className="mt-5">
+        <GroupLockCountdown />
+      </div>
 
       {/* Próximos partidos */}
       <section className="mt-8">
