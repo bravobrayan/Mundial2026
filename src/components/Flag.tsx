@@ -19,7 +19,7 @@ export function Flag({
       src={url}
       alt=""
       loading="lazy"
-      className={`inline-block shrink-0 rounded-[2px] object-cover ring-1 ring-black/20 ${className}`}
+      className={`inline-block shrink-0 rounded-[3px] object-cover shadow-sm ring-1 ring-inset ring-black/30 ${className}`}
     />
   );
 }
