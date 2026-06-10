@@ -32,5 +32,5 @@ export function flagToCode(flag?: string | null): string | null {
 
 export function flagUrl(flag?: string | null): string | null {
   const code = flagToCode(flag);
-  return code ? `https://flagcdn.com/${code}.svg` : null;
+  return code ? `/flags/${code}.svg` : null;
 }
