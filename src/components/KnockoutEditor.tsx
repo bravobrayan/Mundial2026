@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import type { PredMap } from "@/lib/quiniela/types";
 import { isMatchLocked } from "@/lib/quiniela/lock";
 import { Flag } from "@/components/Flag";
-import { saveKnockout } from "./actions";
+import { saveKnockout } from "@/app/liga/actions";
 
 export type KnockoutMatch = {
   id: number;
@@ -36,9 +36,11 @@ const fmt = new Intl.DateTimeFormat("es-MX", {
 });
 
 export function KnockoutEditor({
+  leagueId,
   matches,
   initialPreds,
 }: {
+  leagueId: string;
   matches: KnockoutMatch[];
   initialPreds: PredMap;
 }) {
@@ -58,6 +60,7 @@ export function KnockoutEditor({
     );
     start(async () => {
       const res = await saveKnockout({
+        leagueId,
         predictions: defined.map((m) => ({
           matchId: m.id,
           home: preds[m.id]?.home ?? null,

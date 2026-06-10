@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { PredMap } from "@/lib/quiniela/types";
-import { KnockoutEditor, type KnockoutMatch } from "./KnockoutEditor";
+import { KnockoutEditor, type KnockoutMatch } from "@/components/KnockoutEditor";
 
-export default async function CuadroPage() {
+export default async function CuadroPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +26,8 @@ export default async function CuadroPage() {
     supabase
       .from("predictions")
       .select("match_id, home_goals, away_goals")
-      .eq("user_id", user.id),
+      .eq("user_id", user.id)
+      .eq("league_id", id),
   ]);
 
   const initialPreds: PredMap = {};
@@ -48,7 +54,7 @@ export default async function CuadroPage() {
         </div>
       )}
 
-      <KnockoutEditor matches={list} initialPreds={initialPreds} />
+      <KnockoutEditor leagueId={id} matches={list} initialPreds={initialPreds} />
     </main>
   );
 }

@@ -7,9 +7,15 @@ import { login, signup, type AuthState } from "./actions";
 export function AuthForm({
   mode,
   next,
+  onSwitchMode,
+  onForgot,
 }: {
   mode: "login" | "signup";
   next?: string;
+  /** Si se pasa, el enlace de cambiar (login↔registro) llama a esto en vez de navegar. */
+  onSwitchMode?: () => void;
+  /** Si se pasa, "¿Olvidaste tu contraseña?" llama a esto en vez de navegar. */
+  onForgot?: () => void;
 }) {
   const action = mode === "login" ? login : signup;
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
@@ -44,6 +50,27 @@ export function AuthForm({
       />
       {next && <input type="hidden" name="next" value={next} />}
 
+      {mode === "login" && (
+        <div className="-mt-1 text-right">
+          {onForgot ? (
+            <button
+              type="button"
+              onClick={onForgot}
+              className="text-xs text-slate-400 transition hover:text-gold-400"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          ) : (
+            <Link
+              href="/recuperar"
+              className="text-xs text-slate-400 transition hover:text-gold-400"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          )}
+        </div>
+      )}
+
       {state?.error && (
         <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300 ring-1 ring-red-500/30">
           {state.error}
@@ -65,21 +92,42 @@ export function AuthForm({
       <p className="text-center text-sm text-slate-400">
         {mode === "login" ? (
           <>
-            ¿No tienes cuenta?{" "}
-            <Link href="/registro" className="text-gold-400 hover:underline">
-              Regístrate
-            </Link>
+            ¿No tienes cuenta? <SwitchLink onSwitchMode={onSwitchMode} href="/registro" label="Regístrate" />
           </>
         ) : (
           <>
-            ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="text-gold-400 hover:underline">
-              Inicia sesión
-            </Link>
+            ¿Ya tienes cuenta? <SwitchLink onSwitchMode={onSwitchMode} href="/login" label="Inicia sesión" />
           </>
         )}
       </p>
     </form>
+  );
+}
+
+function SwitchLink({
+  onSwitchMode,
+  href,
+  label,
+}: {
+  onSwitchMode?: () => void;
+  href: string;
+  label: string;
+}) {
+  if (onSwitchMode) {
+    return (
+      <button
+        type="button"
+        onClick={onSwitchMode}
+        className="text-gold-400 hover:underline"
+      >
+        {label}
+      </button>
+    );
+  }
+  return (
+    <Link href={href} className="text-gold-400 hover:underline">
+      {label}
+    </Link>
   );
 }
 

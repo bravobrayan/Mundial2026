@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Countdown } from "@/components/Countdown";
 import { Logo } from "@/components/Logo";
 import { HeroBackground } from "@/components/HeroBackground";
+import { LandingAuth } from "@/components/LandingAuth";
 import { createClient } from "@/lib/supabase/server";
 
 const SCORING = [
@@ -73,39 +73,7 @@ export default async function Home() {
             La Quiniela
           </span>
 
-          <div className="mt-10 flex flex-col items-center gap-4">
-            {user ? (
-              <Link
-                href="/jugar"
-                className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-12 py-4 text-lg font-bold uppercase tracking-wide text-white shadow-xl shadow-orange-500/30 transition hover:brightness-110"
-              >
-                Ir a mi quiniela
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-12 py-4 text-lg font-bold uppercase tracking-wide text-white shadow-xl shadow-orange-500/30 transition hover:brightness-110"
-              >
-                Inicia sesión
-              </Link>
-            )}
-            <p className="max-w-xs text-sm text-slate-400">
-              {user ? (
-                "¡Listo para competir! Entra a llenar tus pronósticos."
-              ) : (
-                <>
-                  ¿No tienes cuenta?{" "}
-                  <Link
-                    href="/registro"
-                    className="font-semibold text-white underline-offset-4 hover:underline"
-                  >
-                    Regístrate
-                  </Link>{" "}
-                  para competir con tus amigos.
-                </>
-              )}
-            </p>
-          </div>
+          <LandingAuth loggedIn={!!user} />
 
           <div className="mt-12 flex flex-col items-center gap-2">
             <span className="text-[11px] uppercase tracking-widest text-slate-400">

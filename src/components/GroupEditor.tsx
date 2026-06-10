@@ -5,7 +5,7 @@ import type { Match, PredMap, Team } from "@/lib/quiniela/types";
 import { computeRows, sortStanding } from "@/lib/quiniela/standings";
 import { isMatchLocked } from "@/lib/quiniela/lock";
 import { Flag } from "@/components/Flag";
-import { saveGroup } from "./actions";
+import { saveGroup } from "@/app/liga/actions";
 
 const fmt = new Intl.DateTimeFormat("es-MX", {
   weekday: "short",
@@ -17,12 +17,14 @@ const fmt = new Intl.DateTimeFormat("es-MX", {
 });
 
 export function GroupEditor({
+  leagueId,
   grupo,
   teams,
   matches,
   initialPreds,
   initialOrder,
 }: {
+  leagueId: string;
   grupo: string;
   teams: Team[];
   matches: Match[];
@@ -72,6 +74,7 @@ export function GroupEditor({
     setMsg(null);
     startTransition(async () => {
       const res = await saveGroup({
+        leagueId,
         grupo,
         matchIds: matches.map((m) => m.id),
         predictions: matches.map((m) => ({

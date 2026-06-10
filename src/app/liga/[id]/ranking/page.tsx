@@ -9,34 +9,38 @@ type Row = {
   partidos: number;
 };
 
-export default async function RankingPage() {
+export default async function LigaRankingPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data, error } = await supabase.rpc("leaderboard");
+  const { data, error } = await supabase.rpc("league_leaderboard", {
+    p_league: id,
+  });
   const rows = (data ?? []) as Row[];
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
-      <h1 className="text-2xl font-black text-white">Ranking general</h1>
+      <h1 className="text-2xl font-black text-white">Ranking de la liga</h1>
       <p className="mb-6 text-sm text-slate-400">
-        Se actualiza solo conforme se cargan los resultados reales.
+        Solo los miembros de esta liga. Se actualiza conforme entran los
+        resultados reales.
       </p>
 
       {error && (
         <div className="rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-3 text-sm text-gold-400">
-          Aún no está disponible el ranking (¿corriste la migración 0002?).
+          No se pudo cargar el ranking (¿corriste la migración 0004?).
         </div>
       )}
 
-      {!error && rows.length === 0 && (
-        <p className="text-slate-400">Todavía no hay jugadores registrados.</p>
-      )}
-
-      {rows.length > 0 && (
+      {!error && rows.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-white/10">
           <table className="w-full text-sm">
             <thead className="bg-navy-900/70 text-[11px] uppercase text-slate-400">
@@ -55,9 +59,7 @@ export default async function RankingPage() {
                 return (
                   <tr
                     key={r.user_id}
-                    className={`border-t border-white/5 ${
-                      me ? "bg-pitch-500/10" : ""
-                    }`}
+                    className={`border-t border-white/5 ${me ? "bg-pitch-500/10" : ""}`}
                   >
                     <td className="px-4 py-3 font-bold text-slate-300">
                       {medal ?? i + 1}

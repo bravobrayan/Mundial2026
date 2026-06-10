@@ -2,9 +2,11 @@ import Link from "next/link";
 import { GROUPS } from "@/lib/quiniela/types";
 
 export function GroupTabs({
+  leagueId,
   active,
   completed,
 }: {
+  leagueId: string;
   active: string;
   completed: Set<string>;
 }) {
@@ -16,7 +18,7 @@ export function GroupTabs({
         return (
           <Link
             key={g}
-            href={`/jugar/grupos/${g}`}
+            href={`/liga/${leagueId}/grupos/${g}`}
             className={`relative flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold transition ${
               isActive
                 ? "bg-pitch-500 text-navy-950"

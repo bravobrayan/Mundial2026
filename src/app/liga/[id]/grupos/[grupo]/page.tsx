@@ -2,15 +2,15 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GROUPS, type Match, type PredMap, type Team } from "@/lib/quiniela/types";
 import { getCompletedGroups } from "@/lib/quiniela/progress";
-import { GroupTabs } from "../GroupTabs";
-import { GroupEditor } from "../GroupEditor";
+import { GroupTabs } from "@/components/GroupTabs";
+import { GroupEditor } from "@/components/GroupEditor";
 
 export default async function GrupoPage({
   params,
 }: {
-  params: Promise<{ grupo: string }>;
+  params: Promise<{ id: string; grupo: string }>;
 }) {
-  const { grupo: raw } = await params;
+  const { id, grupo: raw } = await params;
   const grupo = raw.toUpperCase();
   if (!GROUPS.includes(grupo as (typeof GROUPS)[number])) notFound();
 
@@ -37,21 +37,22 @@ export default async function GrupoPage({
       supabase
         .from("predictions")
         .select("match_id, home_goals, away_goals")
-        .eq("user_id", user.id),
+        .eq("user_id", user.id)
+        .eq("league_id", id),
       supabase
         .from("group_positions")
         .select("team_id, position")
         .eq("user_id", user.id)
+        .eq("league_id", id)
         .eq("grp", grupo)
         .order("position"),
     ]);
 
   const initialPreds: PredMap = {};
-  for (const p of preds ?? []) {
+  for (const p of preds ?? [])
     initialPreds[p.match_id] = { home: p.home_goals, away: p.away_goals };
-  }
   const initialOrder = (pos ?? []).map((p) => p.team_id);
-  const completed = await getCompletedGroups(supabase, user.id);
+  const completed = await getCompletedGroups(supabase, user.id, id);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8">
@@ -64,10 +65,11 @@ export default async function GrupoPage({
             Llena los 6 partidos del grupo. La tabla se actualiza sola.
           </p>
         </div>
-        <GroupTabs active={grupo} completed={completed} />
+        <GroupTabs leagueId={id} active={grupo} completed={completed} />
       </div>
 
       <GroupEditor
+        leagueId={id}
         grupo={grupo}
         teams={(teams ?? []) as Team[]}
         matches={(matches ?? []) as Match[]}

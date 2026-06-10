@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export async function getCompletedGroups(
   supabase: SupabaseClient,
   userId: string,
+  leagueId: string,
 ): Promise<Set<string>> {
   const { data: matches } = await supabase
     .from("matches")
@@ -16,7 +17,8 @@ export async function getCompletedGroups(
   const { data: preds } = await supabase
     .from("predictions")
     .select("match_id, home_goals, away_goals")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .eq("league_id", leagueId);
 
   const filled = new Set(
     (preds ?? [])

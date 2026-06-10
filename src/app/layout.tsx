@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "Quiniela Mundial 2026",
   description:
     "Predice los 104 partidos de la Copa Mundial de la FIFA 2026 y compite por el primer lugar.",
+  icons: {
+    icon: "/brand/wc2026-white.svg",
+    apple: "/brand/wc2026-white.svg",
+  },
 };
 
 export default function RootLayout({
