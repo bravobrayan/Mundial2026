@@ -128,6 +128,7 @@ export default async function LigaDashboard({
             <LiveMatchCard
               key={m.id}
               match={m}
+              members={ranking}
               preds={liveBoard.get(m.id) ?? []}
               result={liveResults.get(m.id)}
               meId={user.id}

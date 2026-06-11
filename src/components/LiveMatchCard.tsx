@@ -19,18 +19,29 @@ export type LiveMatch = {
 
 export function LiveMatchCard({
   match,
+  members,
   preds,
   result,
   meId,
 }: {
   match: LiveMatch;
+  members: { user_id: string; display_name: string }[];
   preds: Pred[];
   result: { home_goals: number; away_goals: number } | undefined;
   meId: string;
 }) {
-  const sorted = preds
-    .filter((p) => p.revealed)
-    .sort((a, b) => (b.points ?? -1) - (a.points ?? -1));
+  // Pronóstico (revelado) por usuario
+  const predByUser = new Map(
+    preds.filter((p) => p.revealed).map((p) => [p.user_id, p]),
+  );
+  // TODOS los miembros: primero quienes pronosticaron (por puntos), luego el resto
+  const ordered = [...members].sort((a, b) => {
+    const pa = predByUser.get(a.user_id);
+    const pb = predByUser.get(b.user_id);
+    const va = pa ? (pa.points ?? -1) : -2;
+    const vb = pb ? (pb.points ?? -1) : -2;
+    return vb - va;
+  });
 
   return (
     <div className="rounded-2xl border border-red-500/30 bg-gradient-to-b from-red-500/10 to-transparent p-4">
@@ -64,45 +75,51 @@ export function LiveMatchCard({
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           Pronósticos de la liga
         </div>
-        {sorted.length === 0 ? (
-          <p className="text-center text-xs text-slate-500">
-            Nadie pronosticó este partido.
-          </p>
+        {ordered.length === 0 ? (
+          <p className="text-center text-xs text-slate-500">Sin miembros.</p>
         ) : (
           <div className="flex flex-col gap-1">
-            {sorted.map((p) => (
-              <div
-                key={p.user_id}
-                className={`flex items-center justify-between rounded-lg px-2 py-1 text-sm ${
-                  p.user_id === meId ? "bg-pitch-500/10" : ""
-                }`}
-              >
-                <span className="text-slate-200">
-                  {p.display_name}
-                  {p.user_id === meId && (
-                    <span className="ml-2 text-[10px] text-pitch-500">tú</span>
-                  )}
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="font-mono tabular-nums text-white">
-                    {p.home_goals}-{p.away_goals}
+            {ordered.map((m) => {
+              const p = predByUser.get(m.user_id);
+              const me = m.user_id === meId;
+              return (
+                <div
+                  key={m.user_id}
+                  className={`flex items-center justify-between rounded-lg px-2 py-1 text-sm ${
+                    me ? "bg-pitch-500/10" : ""
+                  }`}
+                >
+                  <span className="text-slate-200">
+                    {m.display_name}
+                    {me && (
+                      <span className="ml-2 text-[10px] text-pitch-500">tú</span>
+                    )}
                   </span>
-                  {p.points != null && (
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                        p.points >= 3
-                          ? "bg-pitch-500/20 text-pitch-500"
-                          : p.points === 1
-                            ? "bg-gold-400/20 text-gold-400"
-                            : "bg-white/5 text-slate-400"
-                      }`}
-                    >
-                      +{p.points}
+                  {p ? (
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono tabular-nums text-white">
+                        {p.home_goals}-{p.away_goals}
+                      </span>
+                      {p.points != null && (
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                            p.points >= 3
+                              ? "bg-pitch-500/20 text-pitch-500"
+                              : p.points === 1
+                                ? "bg-gold-400/20 text-gold-400"
+                                : "bg-white/5 text-slate-400"
+                          }`}
+                        >
+                          +{p.points}
+                        </span>
+                      )}
                     </span>
+                  ) : (
+                    <span className="text-xs text-slate-600">no jugó</span>
                   )}
-                </span>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
