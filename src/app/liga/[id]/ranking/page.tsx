@@ -57,8 +57,6 @@ export default async function LigaRankingPage({
               <tr>
                 <th className="px-4 py-3 text-left font-medium">#</th>
                 <th className="px-2 py-3 text-left font-medium">Jugador</th>
-                <th className="px-2 py-3 text-center font-medium">PJ</th>
-                <th className="px-2 py-3 text-center font-medium">Exactos</th>
                 <th className="px-4 py-3 text-right font-medium">Pts</th>
                 {isOwner && <th className="px-2 py-3" />}
               </tr>
@@ -82,12 +80,6 @@ export default async function LigaRankingPage({
                           tú
                         </span>
                       )}
-                    </td>
-                    <td className="px-2 py-3 text-center tabular-nums text-slate-400">
-                      {r.partidos}
-                    </td>
-                    <td className="px-2 py-3 text-center tabular-nums text-slate-400">
-                      {r.exactos}
                     </td>
                     <td className="px-4 py-3 text-right text-lg font-black tabular-nums text-white">
                       {r.points}
