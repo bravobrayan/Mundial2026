@@ -31,10 +31,11 @@ export default async function LigaDashboard({
 
   const { data: league } = await supabase
     .from("leagues")
-    .select("id, name")
+    .select("id, name, owner_id")
     .eq("id", id)
     .maybeSingle();
   if (!league) redirect("/jugar");
+  const isOwner = league.owner_id === user.id;
 
   const { count: members } = await supabase
     .from("league_members")
@@ -57,7 +58,14 @@ export default async function LigaDashboard({
     p_league: id,
   });
   const ranking = (rankData ?? []) as RankRow[];
-  const topRanking = ranking.slice(0, 10);
+
+  // Progreso de llenado: SOLO lo ve el dueño de la liga.
+  let progress: { user_id: string; display_name: string; group_filled: number }[] =
+    [];
+  if (isOwner) {
+    const { data } = await supabase.rpc("league_progress", { p_league: id });
+    progress = (data ?? []) as typeof progress;
+  }
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -119,7 +127,7 @@ export default async function LigaDashboard({
             Ver completo →
           </Link>
         </div>
-        {topRanking.length === 0 ? (
+        {ranking.length === 0 ? (
           <p className="text-sm text-slate-500">Aún sin puntos cargados.</p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-white/10">
@@ -134,7 +142,7 @@ export default async function LigaDashboard({
                 </tr>
               </thead>
               <tbody>
-                {topRanking.map((r, i) => {
+                {ranking.map((r, i) => {
                   const me = r.user_id === user.id;
                   const medal = ["🥇", "🥈", "🥉"][i];
                   return (
@@ -170,6 +178,49 @@ export default async function LigaDashboard({
           </div>
         )}
       </section>
+
+      {/* Progreso de llenado — SOLO el dueño */}
+      {isOwner && progress.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">
+              👀 Quién falta por completar
+            </h2>
+            <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-400">
+              solo tú ves esto
+            </span>
+          </div>
+          <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-navy-900/50">
+            {progress.map((r) => {
+              const pct = Math.round((r.group_filled / 72) * 100);
+              const done = r.group_filled >= 72;
+              return (
+                <div
+                  key={r.user_id}
+                  className="flex items-center justify-between gap-3 px-4 py-2.5"
+                >
+                  <span className="truncate text-sm text-white">
+                    {r.display_name}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-navy-950">
+                      <div
+                        className={`h-full rounded-full ${done ? "bg-pitch-500" : "bg-gold-400"}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span
+                      className={`w-14 text-right text-xs tabular-nums ${done ? "text-pitch-500" : "text-slate-400"}`}
+                    >
+                      {r.group_filled}/72{done ? " ✓" : ""}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Accesos */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
