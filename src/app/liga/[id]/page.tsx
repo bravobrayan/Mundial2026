@@ -8,6 +8,7 @@ import {
   UpcomingMatches,
   type UpcomingMatch,
 } from "@/components/UpcomingMatches";
+import { LiveMatchCard, type LiveMatch } from "@/components/LiveMatchCard";
 
 type RankRow = {
   user_id: string;
@@ -59,6 +60,50 @@ export default async function LigaDashboard({
   });
   const ranking = (rankData ?? []) as RankRow[];
 
+  // Partidos EN VIVO (empezaron en las últimas ~2.5h)
+  const nowMs = Date.now();
+  const { data: liveData } = await supabase
+    .from("matches")
+    .select(
+      "id, grp, label, kickoff, home:home_team_id(name,flag), away:away_team_id(name,flag)",
+    )
+    .lte("kickoff", new Date(nowMs).toISOString())
+    .gte("kickoff", new Date(nowMs - 2.5 * 3_600_000).toISOString())
+    .order("kickoff", { ascending: false });
+  const liveMatches = (liveData ?? []) as unknown as LiveMatch[];
+
+  type BoardRow = {
+    match_id: number;
+    user_id: string;
+    display_name: string;
+    home_goals: number | null;
+    away_goals: number | null;
+    points: number | null;
+    revealed: boolean;
+  };
+  const liveBoard = new Map<number, BoardRow[]>();
+  const liveResults = new Map<
+    number,
+    { home_goals: number; away_goals: number }
+  >();
+  if (liveMatches.length > 0) {
+    const liveIds = liveMatches.map((m) => m.id);
+    const [{ data: board }, { data: res }] = await Promise.all([
+      supabase.rpc("league_board", { p_league: id }),
+      supabase
+        .from("results")
+        .select("match_id, home_goals, away_goals")
+        .in("match_id", liveIds),
+    ]);
+    for (const r of (board ?? []) as BoardRow[]) {
+      if (!liveIds.includes(r.match_id)) continue;
+      const arr = liveBoard.get(r.match_id) ?? [];
+      arr.push(r);
+      liveBoard.set(r.match_id, arr);
+    }
+    for (const r of res ?? []) liveResults.set(r.match_id, r);
+  }
+
   // Progreso de llenado: SOLO lo ve el dueño de la liga.
   let progress: { user_id: string; display_name: string; group_filled: number }[] =
     [];
@@ -75,6 +120,21 @@ export default async function LigaDashboard({
         {members ?? 1} {members === 1 ? "miembro" : "miembros"} · tu quiniela en
         esta liga
       </p>
+
+      {/* Partido(s) en vivo — destacado */}
+      {liveMatches.length > 0 && (
+        <section className="mt-6 flex flex-col gap-3">
+          {liveMatches.map((m) => (
+            <LiveMatchCard
+              key={m.id}
+              match={m}
+              preds={liveBoard.get(m.id) ?? []}
+              result={liveResults.get(m.id)}
+              meId={user.id}
+            />
+          ))}
+        </section>
+      )}
 
       <div className="mt-5">
         <GroupLockCountdown />
