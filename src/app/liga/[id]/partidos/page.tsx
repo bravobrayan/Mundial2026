@@ -46,24 +46,31 @@ export default async function PartidosPage({
 
   const since = new Date(Date.now() - 2 * 86_400_000).toISOString();
 
-  const [{ data: matchesData }, { data: board }, { count: members }] =
+  // Primero los partidos a mostrar, para pedir SOLO esos pronósticos
+  const { data: matchesData } = await supabase
+    .from("matches")
+    .select(
+      "id, grp, label, kickoff, stadium, home:home_team_id(name,flag), away:away_team_id(name,flag)",
+    )
+    .gte("kickoff", since)
+    .order("kickoff")
+    .limit(18);
+  const matches = (matchesData ?? []) as unknown as MatchRow[];
+  const matchIds = matches.length ? matches.map((m) => m.id) : [-1];
+
+  const [{ data: board }, { count: members }, { data: resultsData }] =
     await Promise.all([
-      supabase
-        .from("matches")
-        .select(
-          "id, grp, label, kickoff, stadium, home:home_team_id(name,flag), away:away_team_id(name,flag)",
-        )
-        .gte("kickoff", since)
-        .order("kickoff")
-        .limit(18),
-      supabase.rpc("league_board", { p_league: id }),
+      supabase.rpc("league_board", { p_league: id, p_matches: matchIds }),
       supabase
         .from("league_members")
         .select("user_id", { count: "exact", head: true })
         .eq("league_id", id),
+      supabase
+        .from("results")
+        .select("match_id, home_goals, away_goals")
+        .in("match_id", matchIds),
     ]);
 
-  const matches = (matchesData ?? []) as unknown as MatchRow[];
   const rows = (board ?? []) as BoardRow[];
   const byMatch = new Map<number, BoardRow[]>();
   for (const r of rows) {
@@ -71,16 +78,7 @@ export default async function PartidosPage({
     arr.push(r);
     byMatch.set(r.match_id, arr);
   }
-
-  // Resultados reales de los partidos en pantalla
-  const matchIds = matches.map((m) => m.id);
-  const { data: resultsData } = await supabase
-    .from("results")
-    .select("match_id, home_goals, away_goals")
-    .in("match_id", matchIds.length ? matchIds : [-1]);
-  const results = new Map(
-    (resultsData ?? []).map((r) => [r.match_id, r]),
-  );
+  const results = new Map((resultsData ?? []).map((r) => [r.match_id, r]));
 
   const now = Date.now();
 

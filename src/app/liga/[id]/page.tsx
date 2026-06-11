@@ -89,7 +89,7 @@ export default async function LigaDashboard({
   if (liveMatches.length > 0) {
     const liveIds = liveMatches.map((m) => m.id);
     const [{ data: board }, { data: res }] = await Promise.all([
-      supabase.rpc("league_board", { p_league: id }),
+      supabase.rpc("league_board", { p_league: id, p_matches: liveIds }),
       supabase
         .from("results")
         .select("match_id, home_goals, away_goals")
