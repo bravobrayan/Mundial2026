@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Flag } from "@/components/Flag";
+import { AutoRefresh } from "@/components/AutoRefresh";
 
 type BoardRow = {
   match_id: number;
@@ -85,6 +86,7 @@ export default async function PartidosPage({
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8">
+      <AutoRefresh />
       <h1 className="text-2xl font-black text-white">Partidos de la liga</h1>
       <p className="mb-6 text-sm text-slate-400">
         Los pronósticos de cada quien se{" "}

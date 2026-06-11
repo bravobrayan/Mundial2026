@@ -7,6 +7,7 @@ import {
   type UpcomingMatch,
 } from "@/components/UpcomingMatches";
 import { GroupLockCountdown } from "@/components/GroupLockCountdown";
+import { AutoRefresh } from "@/components/AutoRefresh";
 
 type RankRow = {
   user_id: string;
@@ -52,6 +53,7 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-10">
+      <AutoRefresh seconds={60} />
       <p className="text-sm text-slate-400">Hola,</p>
       <h1 className="text-3xl font-black text-white">{nombre} 👋</h1>
 

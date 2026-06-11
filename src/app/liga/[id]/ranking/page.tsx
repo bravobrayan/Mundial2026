@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { ExpelButton } from "./ExpelButton";
 
 type Row = {
@@ -36,6 +37,7 @@ export default async function LigaRankingPage({
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
+      <AutoRefresh />
       <h1 className="text-2xl font-black text-white">Ranking de la liga</h1>
       <p className="mb-6 text-sm text-slate-400">
         Solo los miembros de esta liga. Se actualiza conforme entran los
