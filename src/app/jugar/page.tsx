@@ -8,6 +8,10 @@ import {
 } from "@/components/UpcomingMatches";
 import { GroupLockCountdown } from "@/components/GroupLockCountdown";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import {
+  LiveMatchBanner,
+  type LiveBannerMatch,
+} from "@/components/LiveMatchBanner";
 
 type RankRow = {
   user_id: string;
@@ -31,12 +35,39 @@ export default async function HomePage() {
     .maybeSingle();
   const nombre = profile?.display_name ?? user.email?.split("@")[0] ?? "jugador";
 
+  const nowMs = Date.now();
+
+  // Partido(s) en vivo (empezaron en las últimas ~2.5h)
+  const { data: liveData } = await supabase
+    .from("matches")
+    .select(
+      "id, grp, label, kickoff, home:home_team_id(name,flag), away:away_team_id(name,flag)",
+    )
+    .lte("kickoff", new Date(nowMs).toISOString())
+    .gte("kickoff", new Date(nowMs - 2.5 * 3_600_000).toISOString())
+    .order("kickoff", { ascending: false });
+  const liveMatches = (liveData ?? []) as unknown as LiveBannerMatch[];
+  let liveResults = new Map<
+    number,
+    { home_goals: number; away_goals: number }
+  >();
+  if (liveMatches.length > 0) {
+    const { data: res } = await supabase
+      .from("results")
+      .select("match_id, home_goals, away_goals")
+      .in(
+        "match_id",
+        liveMatches.map((m) => m.id),
+      );
+    liveResults = new Map((res ?? []).map((r) => [r.match_id, r]));
+  }
+
   const { data: up } = await supabase
     .from("matches")
     .select(
       "id, grp, label, kickoff, stadium, home:home_team_id(name,flag), away:away_team_id(name,flag)",
     )
-    .gt("kickoff", new Date().toISOString())
+    .gt("kickoff", new Date(nowMs).toISOString())
     .order("kickoff")
     .limit(6);
 
@@ -60,6 +91,13 @@ export default async function HomePage() {
       <div className="mt-5">
         <GroupLockCountdown />
       </div>
+
+      {/* Partido en vivo (destacado) */}
+      {liveMatches.length > 0 && (
+        <section className="mt-6">
+          <LiveMatchBanner matches={liveMatches} results={liveResults} />
+        </section>
+      )}
 
       {/* Próximos partidos */}
       <section className="mt-8">
