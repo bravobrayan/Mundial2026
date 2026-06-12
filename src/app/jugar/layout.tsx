@@ -26,6 +26,7 @@ export default async function JugarLayout({
   const navLinks: NavLinkT[] = [
     { href: "/jugar", label: "Inicio" },
     { href: "/jugar/ligas", label: "Ligas" },
+    { href: "/jugar/reglas", label: "Reglas" },
   ];
   if (profile?.is_admin) navLinks.push({ href: "/admin", label: "Admin" });
 

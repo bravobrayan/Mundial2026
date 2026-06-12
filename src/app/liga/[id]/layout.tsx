@@ -63,6 +63,7 @@ export default async function LigaLayout({
     { href: `/liga/${id}/cuadro`, label: "Eliminatorias" },
     { href: `/liga/${id}/partidos`, label: "Partidos" },
     { href: `/liga/${id}/ranking`, label: "Ranking" },
+    { href: "/jugar/reglas", label: "Reglas" },
     { href: "/jugar", label: "Mis ligas" },
   ];
   if (profile?.is_admin) navLinks.push({ href: "/admin", label: "Admin" });
@@ -84,7 +85,7 @@ export default async function LigaLayout({
           </div>
           <div className="flex items-center gap-1">
             <div className="mr-1 hidden items-center gap-1 sm:flex">
-              {navLinks.slice(0, 4).map((l) => (
+              {navLinks.slice(0, 5).map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
