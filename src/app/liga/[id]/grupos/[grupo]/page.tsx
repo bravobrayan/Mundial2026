@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GROUPS, type Match, type PredMap, type Team } from "@/lib/quiniela/types";
 import { getCompletedGroups } from "@/lib/quiniela/progress";
+import { isGroupLocked } from "@/lib/quiniela/lock";
 import { GroupTabs } from "@/components/GroupTabs";
 import { GroupEditor } from "@/components/GroupEditor";
 
@@ -67,6 +68,13 @@ export default async function GrupoPage({
         </div>
         <GroupTabs leagueId={id} active={grupo} completed={completed} />
       </div>
+
+      {isGroupLocked() && (
+        <div className="mb-5 rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-3 text-sm text-gold-400">
+          🔒 La fase de grupos está <strong>cerrada</strong> (ya comenzó el
+          Mundial). Solo puedes ver tus pronósticos.
+        </div>
+      )}
 
       <GroupEditor
         leagueId={id}

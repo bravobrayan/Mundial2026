@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import type { Match, PredMap, Team } from "@/lib/quiniela/types";
 import { computeRows, sortStanding } from "@/lib/quiniela/standings";
-import { isMatchLocked } from "@/lib/quiniela/lock";
+import { isMatchLocked, isGroupLocked } from "@/lib/quiniela/lock";
 import { Flag } from "@/components/Flag";
 import { saveGroup } from "@/app/liga/actions";
 
@@ -53,6 +53,8 @@ export function GroupEditor({
     [teamIds, rows, manualOrder],
   );
 
+  const groupLocked = isGroupLocked(); // cierre global de la fase de grupos
+
   function setScore(matchId: number, side: "home" | "away", value: string) {
     const n = value === "" ? null : Math.max(0, Math.min(99, Number(value)));
     setPreds((prev) => ({
@@ -100,7 +102,7 @@ export function GroupEditor({
           const home = teamById[m.home_team_id!];
           const away = teamById[m.away_team_id!];
           const p = preds[m.id] ?? { home: null, away: null };
-          const lock = isMatchLocked(m.kickoff);
+          const lock = groupLocked || isMatchLocked(m.kickoff);
           return (
             <div
               key={m.id}
@@ -183,7 +185,9 @@ export function GroupEditor({
                         <button
                           onClick={() => move(i, -1)}
                           disabled={
-                            i === 0 || rows[sorted[i - 1]]?.pts !== r.pts
+                            groupLocked ||
+                            i === 0 ||
+                            rows[sorted[i - 1]]?.pts !== r.pts
                           }
                           className="text-xs leading-none text-slate-500 enabled:hover:text-white disabled:opacity-20"
                           aria-label="Subir"
@@ -193,6 +197,7 @@ export function GroupEditor({
                         <button
                           onClick={() => move(i, 1)}
                           disabled={
+                            groupLocked ||
                             i === sorted.length - 1 ||
                             rows[sorted[i + 1]]?.pts !== r.pts
                           }
@@ -217,10 +222,14 @@ export function GroupEditor({
         <div className="mt-4">
           <button
             onClick={onSave}
-            disabled={pending}
+            disabled={pending || groupLocked}
             className="w-full rounded-xl bg-pitch-500 px-4 py-3 font-semibold text-navy-950 transition hover:bg-pitch-600 disabled:opacity-60"
           >
-            {pending ? "Guardando…" : "Guardar grupo"}
+            {groupLocked
+              ? "🔒 Grupos cerrados"
+              : pending
+                ? "Guardando…"
+                : "Guardar grupo"}
           </button>
           {msg && (
             <p

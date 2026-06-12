@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isMatchLocked } from "@/lib/quiniela/lock";
+import { isMatchLocked, isGroupLocked } from "@/lib/quiniela/lock";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
@@ -41,6 +41,11 @@ export async function saveGroup(input: {
   if (!user) return { ok: false, error: "Sesión expirada. Vuelve a entrar." };
   if (!(await isMember(supabase, user.id, input.leagueId)))
     return { ok: false, error: "No perteneces a esta liga." };
+  if (isGroupLocked())
+    return {
+      ok: false,
+      error: "La fase de grupos ya está cerrada (comenzó el Mundial).",
+    };
 
   // Bloqueo POR PARTIDO: no se aceptan cambios de partidos ya iniciados.
   const { data: kickoffs } = await supabase
