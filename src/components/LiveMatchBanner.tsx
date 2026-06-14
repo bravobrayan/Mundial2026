@@ -16,14 +16,17 @@ export function LiveMatchBanner({
   results,
 }: {
   matches: LiveBannerMatch[];
-  results: Map<number, { home_goals: number; away_goals: number }>;
+  results: Map<
+    number,
+    { home_goals: number; away_goals: number; finished?: boolean }
+  >;
 }) {
   if (matches.length === 0) return null;
   return (
     <div className="flex flex-col gap-3">
       {matches.map((m) => {
         const r = results.get(m.id);
-        const finished = isMatchFinished(m.kickoff);
+        const finished = (r?.finished ?? false) || isMatchFinished(m.kickoff);
         return (
           <div
             key={m.id}

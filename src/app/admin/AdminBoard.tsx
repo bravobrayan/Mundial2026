@@ -33,7 +33,7 @@ export function AdminBoard({
   teams,
 }: {
   matches: AdminMatch[];
-  results: Record<number, { home: number; away: number }>;
+  results: Record<number, { home: number; away: number; finished: boolean }>;
   teams: Team[];
 }) {
   const [stage, setStage] = useState("group");
@@ -82,12 +82,13 @@ function AdminRow({
   knockout,
 }: {
   match: AdminMatch;
-  result?: { home: number; away: number };
+  result?: { home: number; away: number; finished: boolean };
   teams: Team[];
   knockout: boolean;
 }) {
   const [home, setHome] = useState<string>(result ? String(result.home) : "");
   const [away, setAway] = useState<string>(result ? String(result.away) : "");
+  const [finished, setFinished] = useState<boolean>(result?.finished ?? false);
   const [homeId, setHomeId] = useState<number | null>(match.home_team_id);
   const [awayId, setAwayId] = useState<number | null>(match.away_team_id);
   const [pending, start] = useTransition();
@@ -119,6 +120,7 @@ function AdminRow({
         matchId: match.id,
         home: home === "" ? null : Number(home),
         away: away === "" ? null : Number(away),
+        finished,
       });
       setMsg(res.ok ? "Resultado guardado ✓" : res.error);
     });
@@ -181,15 +183,38 @@ function AdminRow({
         </span>
       </div>
 
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-pitch-500">{msg}</span>
-        <button
-          onClick={save}
-          disabled={pending || (knockout && !teamsSet)}
-          className="rounded-lg bg-pitch-500 px-4 py-1.5 text-sm font-semibold text-navy-950 transition hover:bg-pitch-600 disabled:opacity-50"
-        >
-          Guardar
-        </button>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
+        <label className="flex cursor-pointer select-none items-center gap-2 text-sm">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={finished}
+            onClick={() => setFinished((v) => !v)}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+              finished ? "bg-pitch-500" : "bg-white/15"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                finished ? "left-[22px]" : "left-0.5"
+              }`}
+            />
+          </button>
+          <span className={finished ? "text-white" : "text-slate-400"}>
+            {finished ? "Partido terminó" : "En juego"}
+          </span>
+        </label>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-pitch-500">{msg}</span>
+          <button
+            onClick={save}
+            disabled={pending || (knockout && !teamsSet)}
+            className="rounded-lg bg-pitch-500 px-4 py-1.5 text-sm font-semibold text-navy-950 transition hover:bg-pitch-600 disabled:opacity-50"
+          >
+            Guardar
+          </button>
+        </div>
       </div>
     </div>
   );

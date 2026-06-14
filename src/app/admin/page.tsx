@@ -18,13 +18,20 @@ export default async function AdminPage() {
           "id, stage, grp, kickoff, label, home_team_id, away_team_id, home:home_team_id(name,flag), away:away_team_id(name,flag)",
         )
         .order("id"),
-      supabase.from("results").select("match_id, home_goals, away_goals"),
+      supabase.from("results").select("match_id, home_goals, away_goals, finished"),
       supabase.from("teams").select("id, name, grp, flag").order("grp").order("name"),
     ]);
 
-  const resultMap: Record<number, { home: number; away: number }> = {};
+  const resultMap: Record<
+    number,
+    { home: number; away: number; finished: boolean }
+  > = {};
   for (const r of results ?? [])
-    resultMap[r.match_id] = { home: r.home_goals, away: r.away_goals };
+    resultMap[r.match_id] = {
+      home: r.home_goals,
+      away: r.away_goals,
+      finished: r.finished ?? false,
+    };
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8">

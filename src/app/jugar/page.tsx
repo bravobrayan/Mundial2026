@@ -46,12 +46,12 @@ export default async function HomePage() {
   const liveMatches = (liveData ?? []) as unknown as LiveBannerMatch[];
   let liveResults = new Map<
     number,
-    { home_goals: number; away_goals: number }
+    { home_goals: number; away_goals: number; finished?: boolean }
   >();
   if (liveMatches.length > 0) {
     const { data: res } = await supabase
       .from("results")
-      .select("match_id, home_goals, away_goals")
+      .select("match_id, home_goals, away_goals, finished")
       .in(
         "match_id",
         liveMatches.map((m) => m.id),

@@ -78,7 +78,7 @@ export default async function LigaDashboard({
   const liveBoard = new Map<number, BoardRow[]>();
   const liveResults = new Map<
     number,
-    { home_goals: number; away_goals: number }
+    { home_goals: number; away_goals: number; finished?: boolean }
   >();
   if (liveMatches.length > 0) {
     const liveIds = liveMatches.map((m) => m.id);
@@ -86,7 +86,7 @@ export default async function LigaDashboard({
       supabase.rpc("league_board", { p_league: id, p_matches: liveIds }),
       supabase
         .from("results")
-        .select("match_id, home_goals, away_goals")
+        .select("match_id, home_goals, away_goals, finished")
         .in("match_id", liveIds),
     ]);
     for (const r of (board ?? []) as BoardRow[]) {
@@ -116,7 +116,10 @@ export default async function LigaDashboard({
           preds={liveBoard.get(m.id) ?? []}
           result={liveResults.get(m.id)}
           meId={user.id}
-          finished={isMatchFinished(m.kickoff)}
+          finished={
+            (liveResults.get(m.id)?.finished ?? false) ||
+            isMatchFinished(m.kickoff)
+          }
         />
       ))}
     </section>

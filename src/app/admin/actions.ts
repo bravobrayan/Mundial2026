@@ -24,6 +24,7 @@ export async function saveResult(input: {
   matchId: number;
   home: number | null;
   away: number | null;
+  finished?: boolean;
 }): Promise<AdminResult> {
   const { supabase, ok } = await requireAdmin();
   if (!ok) return { ok: false, error: "No autorizado." };
@@ -40,6 +41,7 @@ export async function saveResult(input: {
         match_id: input.matchId,
         home_goals: Math.max(0, Math.min(99, input.home)),
         away_goals: Math.max(0, Math.min(99, input.away)),
+        finished: input.finished ?? false,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "match_id" },
