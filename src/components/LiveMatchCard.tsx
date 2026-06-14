@@ -43,13 +43,25 @@ export function LiveMatchCard({
     return vb - va;
   });
 
+  const finished = !!result;
+
   return (
-    <div className="rounded-2xl border border-red-500/30 bg-gradient-to-b from-red-500/10 to-transparent p-4">
+    <div
+      className={`rounded-2xl border bg-gradient-to-b to-transparent p-4 ${
+        finished ? "border-white/10 from-white/5" : "border-red-500/30 from-red-500/10"
+      }`}
+    >
       <div className="mb-3 flex items-center gap-2">
-        <span className="flex items-center gap-1.5 rounded-full bg-red-500/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-red-300">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-          En vivo
-        </span>
+        {finished ? (
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-300">
+            Final
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 rounded-full bg-red-500/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-red-300">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+            En juego
+          </span>
+        )}
         <span className="text-[11px] text-slate-400">
           {match.grp ? `Grupo ${match.grp}` : match.label}
         </span>
@@ -62,7 +74,7 @@ export function LiveMatchCard({
           <span className="font-semibold text-white">{match.home?.name}</span>
         </div>
         <span className="rounded-lg bg-navy-950 px-3 py-1.5 text-xl font-black tabular-nums text-white">
-          {result ? `${result.home_goals} - ${result.away_goals}` : "vs"}
+          {result ? `${result.home_goals} - ${result.away_goals}` : "—"}
         </span>
         <div className="flex items-center gap-2 text-left">
           <span className="font-semibold text-white">{match.away?.name}</span>
