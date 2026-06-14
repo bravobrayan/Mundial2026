@@ -59,6 +59,7 @@ export default async function LigaLayout({
     });
 
   const navLinks: NavLinkT[] = [
+    { href: `/liga/${id}/mis-resultados`, label: "Mis resultados" },
     { href: `/liga/${id}/ranking`, label: "Ranking" },
     { href: `/liga/${id}/posiciones`, label: "Posiciones" },
     { href: `/liga/${id}/partidos`, label: "Partidos" },
