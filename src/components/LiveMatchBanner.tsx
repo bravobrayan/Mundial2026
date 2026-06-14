@@ -1,9 +1,11 @@
 import { Flag } from "./Flag";
+import { isMatchFinished } from "@/lib/quiniela/lock";
 
 export type LiveBannerMatch = {
   id: number;
   grp: string | null;
   label: string | null;
+  kickoff: string;
   home: { name: string; flag: string | null } | null;
   away: { name: string; flag: string | null } | null;
 };
@@ -21,7 +23,7 @@ export function LiveMatchBanner({
     <div className="flex flex-col gap-3">
       {matches.map((m) => {
         const r = results.get(m.id);
-        const finished = !!r;
+        const finished = isMatchFinished(m.kickoff);
         return (
           <div
             key={m.id}

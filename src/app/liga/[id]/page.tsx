@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCompletedGroups } from "@/lib/quiniela/progress";
-import { isGroupLocked } from "@/lib/quiniela/lock";
+import { isGroupLocked, isMatchFinished } from "@/lib/quiniela/lock";
 import { GroupLockCountdown } from "@/components/GroupLockCountdown";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { MatchCarousel, type CarouselMatch } from "@/components/MatchCarousel";
@@ -62,7 +62,7 @@ export default async function LigaDashboard({
       "id, grp, label, kickoff, home:home_team_id(name,flag), away:away_team_id(name,flag)",
     )
     .lte("kickoff", new Date(nowMs).toISOString())
-    .gte("kickoff", new Date(nowMs - 2.5 * 3_600_000).toISOString())
+    .gte("kickoff", new Date(nowMs - 4 * 3_600_000).toISOString())
     .order("kickoff", { ascending: false });
   const liveMatches = (liveData ?? []) as unknown as LiveMatch[];
 
@@ -116,6 +116,7 @@ export default async function LigaDashboard({
           preds={liveBoard.get(m.id) ?? []}
           result={liveResults.get(m.id)}
           meId={user.id}
+          finished={isMatchFinished(m.kickoff)}
         />
       ))}
     </section>

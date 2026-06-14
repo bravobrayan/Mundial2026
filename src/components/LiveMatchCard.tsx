@@ -16,6 +16,7 @@ export type LiveMatch = {
   id: number;
   grp: string | null;
   label: string | null;
+  kickoff: string;
   home: { name: string; flag: string | null } | null;
   away: { name: string; flag: string | null } | null;
 };
@@ -29,12 +30,14 @@ export function LiveMatchCard({
   preds,
   result,
   meId,
+  finished,
 }: {
   match: LiveMatch;
   members: { user_id: string; display_name: string }[];
   preds: Pred[];
   result: { home_goals: number; away_goals: number } | undefined;
   meId: string;
+  finished: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -57,8 +60,6 @@ export function LiveMatchCard({
       return nv;
     });
   };
-
-  const finished = !!result;
 
   // Pronóstico (revelado) por usuario
   const predByUser = new Map(

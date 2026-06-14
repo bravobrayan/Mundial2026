@@ -41,7 +41,7 @@ export default async function HomePage() {
       "id, grp, label, kickoff, home:home_team_id(name,flag), away:away_team_id(name,flag)",
     )
     .lte("kickoff", new Date(nowMs).toISOString())
-    .gte("kickoff", new Date(nowMs - 2.5 * 3_600_000).toISOString())
+    .gte("kickoff", new Date(nowMs - 4 * 3_600_000).toISOString())
     .order("kickoff", { ascending: false });
   const liveMatches = (liveData ?? []) as unknown as LiveBannerMatch[];
   let liveResults = new Map<
