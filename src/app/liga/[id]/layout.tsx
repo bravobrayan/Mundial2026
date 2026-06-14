@@ -59,10 +59,12 @@ export default async function LigaLayout({
     });
 
   const navLinks: NavLinkT[] = [
-    { href: `/liga/${id}/grupos`, label: "Grupos" },
-    { href: `/liga/${id}/cuadro`, label: "Eliminatorias" },
-    { href: `/liga/${id}/partidos`, label: "Partidos" },
+    { href: `/liga/${id}/mis-resultados`, label: "Mis resultados" },
     { href: `/liga/${id}/ranking`, label: "Ranking" },
+    { href: `/liga/${id}/posiciones`, label: "Posiciones" },
+    { href: `/liga/${id}/partidos`, label: "Partidos" },
+    { href: `/liga/${id}/cuadro`, label: "Eliminatorias" },
+    { href: `/liga/${id}/grupos`, label: "Grupos" },
     { href: "/jugar/reglas", label: "Reglas" },
     { href: "/jugar", label: "Mis ligas" },
   ];

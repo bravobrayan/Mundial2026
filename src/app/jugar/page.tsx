@@ -2,10 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { League } from "@/lib/quiniela/leagues";
-import {
-  UpcomingMatches,
-  type UpcomingMatch,
-} from "@/components/UpcomingMatches";
+import { MatchCarousel, type CarouselMatch } from "@/components/MatchCarousel";
 import { GroupLockCountdown } from "@/components/GroupLockCountdown";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import {
@@ -106,7 +103,7 @@ export default async function HomePage() {
             ⚽ Próximos partidos
           </h2>
         </div>
-        <UpcomingMatches matches={(up ?? []) as unknown as UpcomingMatch[]} />
+        <MatchCarousel matches={(up ?? []) as unknown as CarouselMatch[]} />
       </section>
 
       {/* Mis ligas + ranking */}
