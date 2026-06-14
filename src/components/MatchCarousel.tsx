@@ -33,11 +33,11 @@ export function MatchCarousel({ matches }: { matches: CarouselMatch[] }) {
     );
 
   return (
-    <div className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-1">
+    <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1">
       {matches.map((m) => (
         <div
           key={m.id}
-          className="w-[82%] shrink-0 snap-start rounded-2xl border border-white/10 bg-gradient-to-b from-navy-800/70 to-navy-900/50 p-5 sm:w-[calc(50%-0.5rem)]"
+          className="w-[80%] shrink-0 snap-start rounded-2xl border border-white/10 bg-gradient-to-b from-navy-800/70 to-navy-900/50 p-5 sm:w-[47%]"
         >
           <div className="mb-4 flex items-center justify-between text-xs">
             <span className="font-bold uppercase tracking-wider text-gold-400">
