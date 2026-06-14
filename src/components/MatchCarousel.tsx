@@ -33,28 +33,28 @@ export function MatchCarousel({ matches }: { matches: CarouselMatch[] }) {
     );
 
   return (
-    <div className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
+    <div className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-1">
       {matches.map((m) => (
         <div
           key={m.id}
-          className="w-[230px] shrink-0 snap-start rounded-2xl border border-white/10 bg-gradient-to-b from-navy-800/60 to-navy-900/50 p-4"
+          className="w-[82%] shrink-0 snap-start rounded-2xl border border-white/10 bg-gradient-to-b from-navy-800/70 to-navy-900/50 p-5 sm:w-[calc(50%-0.5rem)]"
         >
-          <div className="mb-3 flex items-center justify-between text-[11px]">
+          <div className="mb-4 flex items-center justify-between text-xs">
             <span className="font-bold uppercase tracking-wider text-gold-400">
               {m.grp ? `Grupo ${m.grp}` : m.label}
             </span>
-            <span className="text-slate-500">
+            <span className="text-slate-400">
               {fmtDay.format(new Date(m.kickoff))}
             </span>
           </div>
 
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-between gap-2">
             <TeamCol team={m.home} />
             <div className="flex flex-col items-center">
-              <span className="rounded-lg bg-navy-950 px-2.5 py-1 text-sm font-black tabular-nums text-white">
+              <span className="rounded-xl bg-white/10 px-3.5 py-2 text-lg font-black tabular-nums text-white">
                 {fmtHour.format(new Date(m.kickoff))}
               </span>
-              <span className="mt-1 text-[10px] font-bold text-slate-600">
+              <span className="mt-1.5 text-[11px] font-bold tracking-widest text-slate-500">
                 VS
               </span>
             </div>
@@ -62,7 +62,7 @@ export function MatchCarousel({ matches }: { matches: CarouselMatch[] }) {
           </div>
 
           {m.stadium && (
-            <div className="mt-3 truncate text-center text-[11px] text-slate-500">
+            <div className="mt-4 truncate text-center text-xs text-slate-500">
               📍 {m.stadium}
             </div>
           )}
@@ -78,16 +78,16 @@ function TeamCol({
   team: { name: string; flag: string | null } | null;
 }) {
   return (
-    <div className="flex w-1/3 flex-col items-center gap-1.5 text-center">
+    <div className="flex flex-1 flex-col items-center gap-2 text-center">
       {team ? (
         <>
-          <Flag flag={team.flag} className="w-9" />
-          <span className="line-clamp-2 text-xs font-semibold leading-tight text-white">
+          <Flag flag={team.flag} className="w-12" />
+          <span className="line-clamp-2 text-sm font-semibold leading-tight text-white">
             {team.name}
           </span>
         </>
       ) : (
-        <span className="text-xs text-slate-500">Por definir</span>
+        <span className="text-sm text-slate-500">Por definir</span>
       )}
     </div>
   );

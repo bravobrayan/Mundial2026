@@ -9,8 +9,6 @@ import { MatchCarousel, type CarouselMatch } from "@/components/MatchCarousel";
 import { Podium } from "@/components/Podium";
 import { RankingTable, type RankingRow } from "@/components/RankingTable";
 import { LiveMatchCard, type LiveMatch } from "@/components/LiveMatchCard";
-import { MyResults } from "@/components/MyResults";
-import { getMyResults } from "@/lib/quiniela/myResults";
 
 export default async function LigaDashboard({
   params,
@@ -55,11 +53,6 @@ export default async function LigaDashboard({
   });
   const ranking = (rankData ?? []) as RankingRow[];
   const hasPoints = ranking.some((r) => r.points > 0);
-
-  // Mis resultados (partidos ya jugados, con puntos) + mi posición
-  const myResults = await getMyResults(supabase, user.id, id);
-  const myTotal = myResults.reduce((s, r) => s + r.points, 0);
-  const myPos = ranking.findIndex((r) => r.user_id === user.id) + 1;
 
   // Partidos EN VIVO (empezaron en las últimas ~2.5h)
   const nowMs = Date.now();
@@ -169,33 +162,6 @@ export default async function LigaDashboard({
     </section>
   );
 
-  const myResultsSection = myResults.length > 0 && (
-    <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">
-          📋 Mis resultados
-        </h2>
-        <span className="text-sm text-slate-400">
-          <span className="font-black text-white">{myTotal}</span> pts
-          {myPos > 0 && (
-            <span className="ml-2 text-gold-400">
-              #{myPos} de {ranking.length}
-            </span>
-          )}
-        </span>
-      </div>
-      <MyResults rows={myResults.slice(0, 4)} />
-      {myResults.length > 4 && (
-        <Link
-          href={`/liga/${id}/mis-resultados`}
-          className="mt-3 inline-block text-sm text-gold-400 hover:underline"
-        >
-          Ver todos mis resultados →
-        </Link>
-      )}
-    </section>
-  );
-
   // Bloque de grupos: protagonista antes del torneo, acceso secundario después.
   const groupsBlock = tournamentStarted ? (
     <Link
@@ -278,12 +244,7 @@ export default async function LigaDashboard({
   );
 
   const accessCards = (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card
-        title="Mis resultados"
-        desc="Tus pronósticos jugados y tus puntos."
-        href={`/liga/${id}/mis-resultados`}
-      />
+    <div className="grid gap-4 sm:grid-cols-3">
       <Card
         title="Posiciones"
         desc="La tabla real de los 12 grupos."
@@ -317,9 +278,8 @@ export default async function LigaDashboard({
         <>
           {liveSection}
           {upcomingSection}
-          {myResultsSection}
-          {rankingSection}
           {groupsBlock}
+          {rankingSection}
           {accessCards}
           {progressSection}
         </>
