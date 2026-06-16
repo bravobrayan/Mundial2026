@@ -27,10 +27,11 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, is_admin")
     .eq("id", user.id)
     .maybeSingle();
   const nombre = profile?.display_name ?? user.email?.split("@")[0] ?? "jugador";
+  const isAdmin = !!profile?.is_admin;
 
   const nowMs = Date.now();
 
@@ -92,7 +93,11 @@ export default async function HomePage() {
       {/* Partido en vivo (destacado) */}
       {liveMatches.length > 0 && (
         <section className="mt-6">
-          <LiveMatchBanner matches={liveMatches} results={liveResults} />
+          <LiveMatchBanner
+            matches={liveMatches}
+            results={liveResults}
+            isAdmin={isAdmin}
+          />
         </section>
       )}
 

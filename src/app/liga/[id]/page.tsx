@@ -34,6 +34,13 @@ export default async function LigaDashboard({
   if (!league) redirect("/jugar");
   const isOwner = league.owner_id === user.id;
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isAdmin = !!profile?.is_admin;
+
   const { count: members } = await supabase
     .from("league_members")
     .select("user_id", { count: "exact", head: true })
@@ -137,6 +144,7 @@ export default async function LigaDashboard({
             (liveResults.get(m.id)?.finished ?? false) ||
             isMatchFinished(m.kickoff)
           }
+          isAdmin={isAdmin}
         />
       ))}
     </section>

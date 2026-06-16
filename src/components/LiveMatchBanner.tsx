@@ -1,5 +1,6 @@
 import { Flag } from "./Flag";
 import { isMatchFinished } from "@/lib/quiniela/lock";
+import { LiveResultEditor } from "./LiveResultEditor";
 
 export type LiveBannerMatch = {
   id: number;
@@ -14,12 +15,14 @@ export type LiveBannerMatch = {
 export function LiveMatchBanner({
   matches,
   results,
+  isAdmin = false,
 }: {
   matches: LiveBannerMatch[];
   results: Map<
     number,
     { home_goals: number; away_goals: number; finished?: boolean }
   >;
+  isAdmin?: boolean;
 }) {
   if (matches.length === 0) return null;
   return (
@@ -64,6 +67,15 @@ export function LiveMatchBanner({
                 <Flag flag={m.away?.flag} className="w-7" />
               </div>
             </div>
+
+            {isAdmin && (
+              <LiveResultEditor
+                matchId={m.id}
+                home={r?.home_goals ?? null}
+                away={r?.away_goals ?? null}
+                finished={r?.finished ?? false}
+              />
+            )}
           </div>
         );
       })}

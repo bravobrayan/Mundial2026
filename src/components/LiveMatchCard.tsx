@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Flag } from "./Flag";
+import { LiveResultEditor } from "./LiveResultEditor";
 
 type Pred = {
   user_id: string;
@@ -31,13 +32,15 @@ export function LiveMatchCard({
   result,
   meId,
   finished,
+  isAdmin = false,
 }: {
   match: LiveMatch;
   members: { user_id: string; display_name: string }[];
   preds: Pred[];
-  result: { home_goals: number; away_goals: number } | undefined;
+  result: { home_goals: number; away_goals: number; finished?: boolean } | undefined;
   meId: string;
   finished: boolean;
+  isAdmin?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -114,6 +117,15 @@ export function LiveMatchCard({
           <Flag flag={match.away?.flag} className="w-7" />
         </div>
       </div>
+
+      {isAdmin && (
+        <LiveResultEditor
+          matchId={match.id}
+          home={result?.home_goals ?? null}
+          away={result?.away_goals ?? null}
+          finished={result?.finished ?? false}
+        />
+      )}
 
       {/* Pronósticos */}
       <div className="mt-4 border-t border-white/10 pt-3">
