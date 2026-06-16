@@ -5,21 +5,24 @@ import { useRouter } from "next/navigation";
 import { saveResult } from "@/app/admin/actions";
 
 /**
- * Editor rápido del resultado en vivo — SOLO admin. Se muestra dentro de la
- * tarjeta/banner del partido en vivo para no tener que entrar a /admin.
- * La acción saveResult valida el rol de admin en el servidor.
+ * Editor rápido del resultado en vivo — SOLO admin. Un botón discreto en la
+ * esquina del partido en vivo abre un pop-up para acomodar el marcador, sin
+ * entrar a /admin. saveResult valida el rol de admin en el servidor.
  */
 export function LiveResultEditor({
   matchId,
+  title,
   home,
   away,
   finished,
 }: {
   matchId: number;
+  title?: string;
   home: number | null;
   away: number | null;
   finished: boolean;
 }) {
+  const [open, setOpen] = useState(false);
   const [h, setH] = useState(home != null ? String(home) : "");
   const [a, setA] = useState(away != null ? String(away) : "");
   const [fin, setFin] = useState(finished);
@@ -27,18 +30,18 @@ export function LiveResultEditor({
   const [msg, setMsg] = useState<string | null>(null);
   const router = useRouter();
 
-  function save(nextFin = fin) {
+  function save() {
     setMsg(null);
     start(async () => {
       const res = await saveResult({
         matchId,
         home: h === "" ? null : Number(h),
         away: a === "" ? null : Number(a),
-        finished: nextFin,
+        finished: fin,
       });
       if (res.ok) {
-        setMsg("Guardado ✓");
         router.refresh();
+        setOpen(false);
       } else {
         setMsg(res.error);
       }
@@ -46,62 +49,95 @@ export function LiveResultEditor({
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-gold-400/30 bg-gold-400/5 p-3">
-      <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold-400">
-        ⚙️ Admin · editar marcador
-      </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Editar resultado (admin)"
+        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-gold-400/30 bg-gold-400/10 text-sm text-gold-400 transition hover:bg-gold-400/20"
+      >
+        ⚙️
+      </button>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min={0}
-            value={h}
-            onChange={(e) => setH(e.target.value)}
-            className="h-9 w-9 rounded-lg border border-white/10 bg-navy-950 text-center font-bold text-white outline-none focus:border-pitch-500"
-          />
-          <span className="text-slate-500">-</span>
-          <input
-            type="number"
-            min={0}
-            value={a}
-            onChange={(e) => setA(e.target.value)}
-            className="h-9 w-9 rounded-lg border border-white/10 bg-navy-950 text-center font-bold text-white outline-none focus:border-pitch-500"
-          />
-        </div>
-
-        <button
-          type="button"
-          role="switch"
-          aria-checked={fin}
-          onClick={() => setFin((v) => !v)}
-          className="flex items-center gap-2 text-xs"
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          onClick={() => setOpen(false)}
         >
-          <span
-            className={`relative h-5 w-9 shrink-0 rounded-full transition ${
-              fin ? "bg-pitch-500" : "bg-white/15"
-            }`}
+          <div
+            className="w-full rounded-t-2xl border border-white/10 bg-navy-900 p-5 sm:max-w-sm sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <span
-              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${
-                fin ? "left-[18px]" : "left-0.5"
-              }`}
-            />
-          </span>
-          <span className={fin ? "text-white" : "text-slate-400"}>
-            {fin ? "Terminó" : "En juego"}
-          </span>
-        </button>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gold-400">
+                ⚙️ Admin · editar resultado
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-2 py-1 text-sm text-slate-400 hover:bg-white/5"
+              >
+                ✕
+              </button>
+            </div>
+            {title && (
+              <p className="mb-4 text-sm font-semibold text-white">{title}</p>
+            )}
 
-        <button
-          onClick={() => save()}
-          disabled={pending}
-          className="ml-auto rounded-lg bg-pitch-500 px-4 py-1.5 text-sm font-semibold text-navy-950 transition hover:bg-pitch-600 disabled:opacity-50"
-        >
-          Guardar
-        </button>
-        {msg && <span className="text-xs text-pitch-500">{msg}</span>}
-      </div>
-    </div>
+            <div className="flex items-center justify-center gap-2">
+              <input
+                type="number"
+                min={0}
+                value={h}
+                onChange={(e) => setH(e.target.value)}
+                className="h-12 w-12 rounded-lg border border-white/10 bg-navy-950 text-center text-lg font-bold text-white outline-none focus:border-pitch-500"
+              />
+              <span className="text-slate-500">-</span>
+              <input
+                type="number"
+                min={0}
+                value={a}
+                onChange={(e) => setA(e.target.value)}
+                className="h-12 w-12 rounded-lg border border-white/10 bg-navy-950 text-center text-lg font-bold text-white outline-none focus:border-pitch-500"
+              />
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={fin}
+              onClick={() => setFin((v) => !v)}
+              className="mx-auto mt-4 flex items-center gap-2 text-sm"
+            >
+              <span
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                  fin ? "bg-pitch-500" : "bg-white/15"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                    fin ? "left-[22px]" : "left-0.5"
+                  }`}
+                />
+              </span>
+              <span className={fin ? "text-white" : "text-slate-400"}>
+                {fin ? "Partido terminó" : "En juego"}
+              </span>
+            </button>
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <span className="text-xs text-red-400">{msg}</span>
+              <button
+                onClick={save}
+                disabled={pending}
+                className="rounded-lg bg-pitch-500 px-5 py-2 text-sm font-semibold text-navy-950 transition hover:bg-pitch-600 disabled:opacity-50"
+              >
+                {pending ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

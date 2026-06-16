@@ -83,10 +83,20 @@ export function LiveMatchCard({
 
   return (
     <div
-      className={`rounded-2xl border bg-gradient-to-b to-transparent p-4 ${
+      className={`relative rounded-2xl border bg-gradient-to-b to-transparent p-4 ${
         finished ? "border-white/10 from-white/5" : "border-red-500/30 from-red-500/10"
       }`}
     >
+      {isAdmin && (
+        <LiveResultEditor
+          matchId={match.id}
+          title={`${match.home?.name ?? "?"} vs ${match.away?.name ?? "?"}`}
+          home={result?.home_goals ?? null}
+          away={result?.away_goals ?? null}
+          finished={result?.finished ?? false}
+        />
+      )}
+
       <div className="mb-3 flex items-center gap-2">
         {finished ? (
           <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-300">
@@ -117,15 +127,6 @@ export function LiveMatchCard({
           <Flag flag={match.away?.flag} className="w-7" />
         </div>
       </div>
-
-      {isAdmin && (
-        <LiveResultEditor
-          matchId={match.id}
-          home={result?.home_goals ?? null}
-          away={result?.away_goals ?? null}
-          finished={result?.finished ?? false}
-        />
-      )}
 
       {/* Pronósticos */}
       <div className="mt-4 border-t border-white/10 pt-3">

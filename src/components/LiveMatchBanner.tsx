@@ -33,7 +33,7 @@ export function LiveMatchBanner({
         return (
           <div
             key={m.id}
-            className={`rounded-2xl border bg-gradient-to-b to-transparent p-4 ${
+            className={`relative rounded-2xl border bg-gradient-to-b to-transparent p-4 ${
               finished
                 ? "border-white/10 from-white/5"
                 : "border-red-500/30 from-red-500/10"
@@ -71,6 +71,7 @@ export function LiveMatchBanner({
             {isAdmin && (
               <LiveResultEditor
                 matchId={m.id}
+                title={`${m.home?.name ?? "?"} vs ${m.away?.name ?? "?"}`}
                 home={r?.home_goals ?? null}
                 away={r?.away_goals ?? null}
                 finished={r?.finished ?? false}
