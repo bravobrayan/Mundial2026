@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Flag } from "@/components/Flag";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { arePredsRevealed } from "@/lib/quiniela/lock";
 
 type BoardRow = {
   match_id: number;
@@ -96,6 +97,7 @@ export default async function PartidosPage({
         {matches.map((m) => {
           const preds = byMatch.get(m.id) ?? [];
           const locked = now >= new Date(m.kickoff).getTime();
+          const showAll = arePredsRevealed(!!m.grp, m.kickoff, now);
           const result = results.get(m.id);
           const mine = preds.find((p) => p.user_id === user.id);
           const revealed = preds
@@ -142,7 +144,7 @@ export default async function PartidosPage({
                   <p className="text-center text-xs text-slate-500">
                     Nadie ha pronosticado aún.
                   </p>
-                ) : !locked ? (
+                ) : !showAll ? (
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-400">
                       {mine

@@ -26,3 +26,17 @@ export function isMatchFinished(
 ): boolean {
   return now >= new Date(kickoff).getTime() + MATCH_PLAY_MS;
 }
+
+/**
+ * ¿Los pronósticos de TODOS ya son visibles? Cuando el pronóstico ya no se
+ * puede editar: el partido empezó, o es de grupos y la fase ya cerró.
+ * (Eliminatorias siguen editables hasta su kickoff → ocultas hasta entonces).
+ */
+export function arePredsRevealed(
+  isGroup: boolean,
+  kickoff: string,
+  now: number = Date.now(),
+): boolean {
+  if (now >= new Date(kickoff).getTime()) return true;
+  return isGroup && isGroupLocked(now);
+}

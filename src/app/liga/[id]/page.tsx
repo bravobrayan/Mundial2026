@@ -5,7 +5,11 @@ import { getCompletedGroups } from "@/lib/quiniela/progress";
 import { isGroupLocked, isMatchFinished } from "@/lib/quiniela/lock";
 import { GroupLockCountdown } from "@/components/GroupLockCountdown";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { MatchCarousel, type CarouselMatch } from "@/components/MatchCarousel";
+import { type CarouselMatch } from "@/components/MatchCarousel";
+import {
+  LeagueUpcoming,
+  type UpcomingPred,
+} from "@/components/LeagueUpcoming";
 import { Podium } from "@/components/Podium";
 import { RankingTable, type RankingRow } from "@/components/RankingTable";
 import { LiveMatchCard, type LiveMatch } from "@/components/LiveMatchCard";
@@ -47,6 +51,19 @@ export default async function LigaDashboard({
     .gt("kickoff", new Date().toISOString())
     .order("kickoff")
     .limit(8);
+
+  // Pronósticos de los próximos partidos (para el pop-up "ver todos").
+  const upIds = (up ?? []).map((m) => m.id);
+  const upPreds: Record<number, UpcomingPred[]> = {};
+  if (upIds.length > 0) {
+    const { data: ub } = await supabase.rpc("league_board", {
+      p_league: id,
+      p_matches: upIds,
+    });
+    for (const r of (ub ?? []) as (UpcomingPred & { match_id: number })[]) {
+      (upPreds[r.match_id] ??= []).push(r);
+    }
+  }
 
   const { data: rankData } = await supabase.rpc("league_leaderboard", {
     p_league: id,
@@ -162,7 +179,11 @@ export default async function LigaDashboard({
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-300">
         ⚽ Próximos partidos
       </h2>
-      <MatchCarousel matches={(up ?? []) as unknown as CarouselMatch[]} />
+      <LeagueUpcoming
+        matches={(up ?? []) as unknown as CarouselMatch[]}
+        preds={upPreds}
+        meId={user.id}
+      />
     </section>
   );
 
