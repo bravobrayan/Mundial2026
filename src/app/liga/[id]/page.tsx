@@ -127,9 +127,22 @@ export default async function LigaDashboard({
   // Progreso de llenado: SOLO lo ve el dueño de la liga.
   let progress: { user_id: string; display_name: string; group_filled: number }[] =
     [];
-  if (isOwner) {
-    const { data } = await supabase.rpc("league_progress", { p_league: id });
-    progress = (data ?? []) as typeof progress;
+  let koProgress: {
+    user_id: string;
+    display_name: string;
+    filled: number;
+    total: number;
+  }[] = [];
+  if (isOwner || isAdmin) {
+    if (isKO) {
+      const { data } = await supabase.rpc("league_ko_progress", {
+        p_league: id,
+      });
+      koProgress = (data ?? []) as typeof koProgress;
+    } else if (isOwner) {
+      const { data } = await supabase.rpc("league_progress", { p_league: id });
+      progress = (data ?? []) as typeof progress;
+    }
   }
 
   const liveSection = liveMatches.length > 0 && (
@@ -278,6 +291,52 @@ export default async function LigaDashboard({
     <StartKnockoutButton leagueId={id} />
   );
 
+  const koTotal = koProgress[0]?.total ?? 0;
+  const koProgressSection = (isOwner || isAdmin) &&
+    koProgress.length > 0 &&
+    koTotal > 0 && (
+      <section>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">
+            👀 Quién falta por completar (eliminatorias)
+          </h2>
+          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-400">
+            solo admins
+          </span>
+        </div>
+        <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-navy-900/50">
+          {koProgress.map((r) => {
+            const rpct = Math.round((r.filled / koTotal) * 100);
+            const done = r.filled >= koTotal;
+            return (
+              <div
+                key={r.user_id}
+                className="flex items-center justify-between gap-3 px-4 py-2.5"
+              >
+                <span className="truncate text-sm text-white">
+                  {r.display_name}
+                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-navy-950">
+                    <div
+                      className={`h-full rounded-full ${done ? "bg-pitch-500" : "bg-gold-400"}`}
+                      style={{ width: `${rpct}%` }}
+                    />
+                  </div>
+                  <span
+                    className={`w-12 text-right text-xs tabular-nums ${done ? "text-pitch-500" : "text-slate-400"}`}
+                  >
+                    {r.filled}/{koTotal}
+                    {done ? " ✓" : ""}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+
   const progressSection = isOwner && progress.length > 0 && (
     <section>
       <div className="mb-3 flex items-center gap-2">
@@ -353,6 +412,7 @@ export default async function LigaDashboard({
           {upcomingSection}
           {rankingSection}
           {koAccessCards}
+          {koProgressSection}
         </>
       ) : tournamentStarted ? (
         <>
