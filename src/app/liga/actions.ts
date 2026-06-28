@@ -7,7 +7,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
-type IncomingPred = { matchId: number; home: number | null; away: number | null };
+type IncomingPred = {
+  matchId: number;
+  home: number | null;
+  away: number | null;
+  advance?: number | null;
+};
 
 async function isMember(
   supabase: SupabaseClient,
@@ -112,24 +117,58 @@ export async function saveKnockout(input: {
   const matchIds = input.predictions.map((p) => p.matchId);
   if (matchIds.length === 0) return { ok: true };
 
-  const { data: kickoffs } = await supabase
+  // Rondas habilitadas por el admin (global).
+  const { data: openRoundsStr } = await supabase.rpc("get_knockout_rounds");
+  const openRounds = new Set(
+    String(openRoundsStr ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+
+  const { data: matchData } = await supabase
     .from("matches")
-    .select("id, kickoff")
+    .select("id, kickoff, stage, home_team_id, away_team_id")
     .in("id", matchIds);
+  const byId = new Map((matchData ?? []).map((m) => [m.id, m]));
+
+  // Aceptamos solo: ronda abierta + no iniciado + con cruce definido.
   const open = new Set(
-    (kickoffs ?? []).filter((m) => !isMatchLocked(m.kickoff)).map((m) => m.id),
+    (matchData ?? [])
+      .filter(
+        (m) =>
+          openRounds.has(m.stage) &&
+          !isMatchLocked(m.kickoff) &&
+          m.home_team_id != null &&
+          m.away_team_id != null,
+      )
+      .map((m) => m.id),
   );
 
   const rows = input.predictions
     .filter((p) => open.has(p.matchId))
-    .map((p) => ({
-      user_id: user.id,
-      league_id: input.leagueId,
-      match_id: p.matchId,
-      home_goals: clean(p.home),
-      away_goals: clean(p.away),
-      updated_at: new Date().toISOString(),
-    }));
+    .map((p) => {
+      const home = clean(p.home);
+      const away = clean(p.away);
+      const m = byId.get(p.matchId);
+      // El equipo de penales solo vale si predijo empate y es uno de los dos del cruce.
+      const isDraw = home != null && away != null && home === away;
+      const validAdvance =
+        isDraw &&
+        m != null &&
+        (p.advance === m.home_team_id || p.advance === m.away_team_id)
+          ? p.advance
+          : null;
+      return {
+        user_id: user.id,
+        league_id: input.leagueId,
+        match_id: p.matchId,
+        home_goals: home,
+        away_goals: away,
+        advance_team_id: validAdvance,
+        updated_at: new Date().toISOString(),
+      };
+    });
 
   if (rows.length > 0) {
     const { error } = await supabase
@@ -139,5 +178,36 @@ export async function saveKnockout(input: {
   }
 
   revalidatePath(`/liga/${input.leagueId}/cuadro`);
+  return { ok: true };
+}
+
+/**
+ * Convierte una liga de grupos en eliminatorias (solo admin).
+ * Conserva el mismo league_id: los puntos de grupos se mantienen y los del
+ * mata-mata se suman encima.
+ */
+export async function startKnockout(leagueId: string): Promise<SaveResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada. Vuelve a entrar." };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile?.is_admin)
+    return { ok: false, error: "Solo un administrador puede hacer esto." };
+
+  const { error } = await supabase.rpc("set_league_type", {
+    p_league: leagueId,
+    p_type: "eliminatorias",
+  });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/liga/${leagueId}`);
+  revalidatePath("/jugar");
   return { ok: true };
 }

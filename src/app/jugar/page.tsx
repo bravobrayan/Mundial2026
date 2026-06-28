@@ -171,7 +171,16 @@ function LeagueRankingCard({
     <div className="rounded-2xl border border-white/10 bg-navy-900/50 p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="min-w-0">
-          <div className="truncate font-semibold text-white">{league.name}</div>
+          <div className="flex items-center gap-2">
+            <span className="truncate font-semibold text-white">
+              {league.name}
+            </span>
+            {league.league_type === "eliminatorias" && (
+              <span className="shrink-0 rounded bg-gold-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold-400">
+                Eliminatorias
+              </span>
+            )}
+          </div>
           <div className="text-xs text-slate-400">
             {league.members} {league.members === 1 ? "miembro" : "miembros"}
           </div>

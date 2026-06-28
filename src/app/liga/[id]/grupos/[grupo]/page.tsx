@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GROUPS, type Match, type PredMap, type Team } from "@/lib/quiniela/types";
 import { getCompletedGroups } from "@/lib/quiniela/progress";
+import { getMembership } from "@/lib/quiniela/leagues";
 import { isGroupLocked } from "@/lib/quiniela/lock";
 import { GroupTabs } from "@/components/GroupTabs";
 import { GroupEditor } from "@/components/GroupEditor";
@@ -20,6 +21,11 @@ export default async function GrupoPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const league = await getMembership(supabase, user.id, id);
+  if (!league) redirect("/jugar");
+  // En ligas de eliminatorias los grupos siguen accesibles como repaso
+  // (de solo lectura por isGroupLocked()).
 
   const [{ data: teams }, { data: matches }, { data: preds }, { data: pos }] =
     await Promise.all([

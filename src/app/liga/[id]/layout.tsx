@@ -31,39 +31,43 @@ export default async function LigaLayout({
     .maybeSingle();
   const nombre = profile?.display_name ?? user.email?.split("@")[0] ?? "Jugador";
 
-  // Notificaciones (de esta liga)
-  const completed = await getCompletedGroups(supabase, user.id, id);
-  const { data: koOpen } = await supabase
-    .from("matches")
-    .select("id")
-    .neq("stage", "group")
-    .not("home_team_id", "is", null)
-    .limit(1);
+  const isKO = league.league_type === "eliminatorias";
 
+  // Notificaciones (de esta liga)
   const notifs: Notif[] = [];
-  if (completed.size < 12)
-    notifs.push({
-      id: "grupos",
-      emoji: "📝",
-      title: "Completa tus grupos",
-      desc: `Te faltan ${12 - completed.size} de 12 grupos en ${league.name}.`,
-      href: `/liga/${id}/grupos`,
-    });
-  if (koOpen && koOpen.length > 0)
-    notifs.push({
-      id: "elim",
-      emoji: "🏆",
-      title: "¡Eliminatorias abiertas!",
-      desc: "Ya hay cruces definidos. Predice los marcadores.",
-      href: `/liga/${id}/cuadro`,
-    });
+
+  if (isKO) {
+    const { data: openRoundsStr } = await supabase.rpc("get_knockout_rounds");
+    const hasOpenRound = String(openRoundsStr ?? "")
+      .split(",")
+      .some((s) => s.trim());
+    if (hasOpenRound)
+      notifs.push({
+        id: "elim",
+        emoji: "🏆",
+        title: "¡Eliminatorias abiertas!",
+        desc: "Hay una ronda habilitada. Predice los marcadores.",
+        href: `/liga/${id}/cuadro`,
+      });
+  } else {
+    const completed = await getCompletedGroups(supabase, user.id, id);
+    if (completed.size < 12)
+      notifs.push({
+        id: "grupos",
+        emoji: "📝",
+        title: "Completa tus grupos",
+        desc: `Te faltan ${12 - completed.size} de 12 grupos en ${league.name}.`,
+        href: `/liga/${id}/grupos`,
+      });
+  }
 
   const navLinks: NavLinkT[] = [
     { href: `/liga/${id}/mis-resultados`, label: "Mis resultados" },
     { href: `/liga/${id}/ranking`, label: "Ranking" },
     { href: `/liga/${id}/posiciones`, label: "Posiciones" },
     { href: `/liga/${id}/partidos`, label: "Partidos" },
-    { href: `/liga/${id}/cuadro`, label: "Eliminatorias" },
+    // Eliminatorias: solo en ligas convertidas. Grupos: siempre (repaso si KO).
+    ...(isKO ? [{ href: `/liga/${id}/cuadro`, label: "Eliminatorias" }] : []),
     { href: `/liga/${id}/grupos`, label: "Grupos" },
     { href: "/jugar/reglas", label: "Reglas" },
     { href: "/jugar", label: "Mis ligas" },

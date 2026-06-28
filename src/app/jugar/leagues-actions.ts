@@ -12,10 +12,13 @@ export async function createLeague(
 ): Promise<LeagueActionState> {
   const name = String(formData.get("name") ?? "").trim();
   if (name.length < 2) return { error: "Escribe un nombre para la liga." };
+  const type = String(formData.get("type") ?? "grupos");
+  const p_type = type === "eliminatorias" ? "eliminatorias" : "grupos";
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_league", {
     p_name: name,
+    p_type,
   });
   if (error) return { error: error.message };
 
