@@ -100,6 +100,8 @@ export default async function LigaDashboard({
     away_goals: number | null;
     points: number | null;
     revealed: boolean;
+    advance_name: string | null;
+    advance_flag: string | null;
   };
   const liveBoard = new Map<number, BoardRow[]>();
   const liveResults = new Map<
