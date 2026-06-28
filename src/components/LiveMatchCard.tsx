@@ -11,6 +11,8 @@ type Pred = {
   away_goals: number | null;
   points: number | null;
   revealed: boolean;
+  advance_name?: string | null;
+  advance_flag?: string | null;
 };
 
 export type LiveMatch = {
@@ -195,6 +197,12 @@ function PredRow({
       </span>
       {pred ? (
         <span className="flex items-center gap-2">
+          {pred.home_goals === pred.away_goals && pred.advance_name && (
+            <span className="flex items-center gap-1 rounded bg-gold-400/15 px-1.5 py-0.5 text-[10px] font-medium text-gold-400">
+              <Flag flag={pred.advance_flag} className="w-3.5" />
+              <span className="hidden sm:inline">pasa</span> {pred.advance_name}
+            </span>
+          )}
           <span className="font-mono tabular-nums text-white">
             {pred.home_goals}-{pred.away_goals}
           </span>
