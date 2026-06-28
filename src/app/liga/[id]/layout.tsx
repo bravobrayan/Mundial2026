@@ -61,17 +61,28 @@ export default async function LigaLayout({
       });
   }
 
-  const navLinks: NavLinkT[] = [
-    { href: `/liga/${id}/mis-resultados`, label: "Mis resultados" },
-    { href: `/liga/${id}/ranking`, label: "Ranking" },
-    { href: `/liga/${id}/posiciones`, label: "Posiciones" },
-    { href: `/liga/${id}/partidos`, label: "Partidos" },
-    // Eliminatorias: solo en ligas convertidas. Grupos: siempre (repaso si KO).
-    ...(isKO ? [{ href: `/liga/${id}/cuadro`, label: "Eliminatorias" }] : []),
-    { href: `/liga/${id}/grupos`, label: "Grupos" },
-    { href: "/jugar/reglas", label: "Reglas" },
-    { href: "/jugar", label: "Mis ligas" },
-  ];
+  // En ligas de eliminatorias destacamos Eliminatorias + Cuadro en la barra
+  // superior (los primeros 5 enlaces). Grupos queda como repaso.
+  const navLinks: NavLinkT[] = isKO
+    ? [
+        { href: `/liga/${id}/ranking`, label: "Ranking" },
+        { href: `/liga/${id}/cuadro`, label: "Eliminatorias" },
+        { href: `/liga/${id}/bracket`, label: "Cuadro" },
+        { href: `/liga/${id}/mis-resultados`, label: "Mis resultados" },
+        { href: `/liga/${id}/partidos`, label: "Partidos" },
+        { href: `/liga/${id}/posiciones`, label: "Posiciones" },
+        { href: "/jugar/reglas", label: "Reglas" },
+        { href: "/jugar", label: "Mis ligas" },
+      ]
+    : [
+        { href: `/liga/${id}/mis-resultados`, label: "Mis resultados" },
+        { href: `/liga/${id}/ranking`, label: "Ranking" },
+        { href: `/liga/${id}/posiciones`, label: "Posiciones" },
+        { href: `/liga/${id}/partidos`, label: "Partidos" },
+        { href: `/liga/${id}/grupos`, label: "Grupos" },
+        { href: "/jugar/reglas", label: "Reglas" },
+        { href: "/jugar", label: "Mis ligas" },
+      ];
   if (profile?.is_admin) navLinks.push({ href: "/admin", label: "Admin" });
 
   return (
