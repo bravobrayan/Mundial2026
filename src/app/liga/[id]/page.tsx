@@ -256,9 +256,9 @@ export default async function LigaDashboard({
   const koAccessCards = (
     <div className="grid gap-4 sm:grid-cols-3">
       <Card
-        title="Mis grupos"
-        desc="Repasa tus pronósticos de la fase de grupos."
-        href={`/liga/${id}/grupos`}
+        title="🏆 Cuadro en vivo"
+        desc="Mira cómo avanza el bracket con los resultados reales."
+        href={`/liga/${id}/bracket`}
       />
       <Card
         title="Posiciones"
