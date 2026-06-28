@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { scoreLine } from "./score";
+import { scoreLine, penaltyBonus } from "./score";
 
 export type MyResultRow = {
   matchId: number;
@@ -11,6 +11,8 @@ export type MyResultRow = {
   pred: { home: number; away: number };
   real: { home: number; away: number };
   points: number;
+  /** Marcador exacto (5 pts base), independiente del bonus de penales. */
+  exact: boolean;
 };
 
 /**
@@ -25,7 +27,7 @@ export async function getMyResults(
   const { data: preds } = await supabase
     .from("predictions")
     .select(
-      "match_id, home_goals, away_goals, match:match_id(grp,label,kickoff,home:home_team_id(name,flag),away:away_team_id(name,flag))",
+      "match_id, home_goals, away_goals, advance_team_id, match:match_id(grp,label,kickoff,home:home_team_id(name,flag),away:away_team_id(name,flag))",
     )
     .eq("user_id", userId)
     .eq("league_id", leagueId)
@@ -36,6 +38,7 @@ export async function getMyResults(
     match_id: number;
     home_goals: number;
     away_goals: number;
+    advance_team_id: number | null;
     match: {
       grp: string | null;
       label: string | null;
@@ -50,12 +53,12 @@ export async function getMyResults(
   const ids = rows.map((r) => r.match_id);
   const { data: resData } = await supabase
     .from("results")
-    .select("match_id, home_goals, away_goals")
+    .select("match_id, home_goals, away_goals, advance_team_id")
     .in("match_id", ids);
   const results = new Map(
     (resData ?? []).map((r) => [
       r.match_id,
-      { home: r.home_goals, away: r.away_goals },
+      { home: r.home_goals, away: r.away_goals, advance: r.advance_team_id },
     ]),
   );
 
@@ -71,8 +74,18 @@ export async function getMyResults(
       home: r.match.home,
       away: r.match.away,
       pred: { home: r.home_goals, away: r.away_goals },
-      real,
-      points: scoreLine(r.home_goals, r.away_goals, real.home, real.away),
+      real: { home: real.home, away: real.away },
+      points:
+        scoreLine(r.home_goals, r.away_goals, real.home, real.away) +
+        penaltyBonus(
+          r.home_goals,
+          r.away_goals,
+          r.advance_team_id,
+          real.home,
+          real.away,
+          real.advance,
+        ),
+      exact: r.home_goals === real.home && r.away_goals === real.away,
     });
   }
   out.sort(

@@ -13,6 +13,7 @@ import {
 import { Podium } from "@/components/Podium";
 import { RankingTable, type RankingRow } from "@/components/RankingTable";
 import { LiveMatchCard, type LiveMatch } from "@/components/LiveMatchCard";
+import { StartKnockoutButton } from "./StartKnockoutButton";
 
 export default async function LigaDashboard({
   params,
@@ -28,11 +29,12 @@ export default async function LigaDashboard({
 
   const { data: league } = await supabase
     .from("leagues")
-    .select("id, name, owner_id")
+    .select("id, name, owner_id, league_type")
     .eq("id", id)
     .maybeSingle();
   if (!league) redirect("/jugar");
   const isOwner = league.owner_id === user.id;
+  const isKO = league.league_type === "eliminatorias";
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -234,6 +236,48 @@ export default async function LigaDashboard({
     </div>
   );
 
+  const knockoutBlock = (
+    <div className="rounded-2xl border border-gold-400/20 bg-gradient-to-b from-gold-400/10 to-navy-900/40 p-6">
+      <h2 className="text-lg font-semibold text-white">Eliminatorias</h2>
+      <p className="mt-1 text-sm text-slate-300">
+        Marcador a los 120&apos; (con prórroga). Si predices empate, marca quién
+        pasa por penales: <strong className="text-gold-400">+3</strong> si
+        aciertas. El cuadro se abre ronda por ronda.
+      </p>
+      <Link
+        href={`/liga/${id}/cuadro`}
+        className="mt-5 inline-block rounded-xl bg-pitch-500 px-5 py-2.5 font-semibold text-navy-950 transition hover:bg-pitch-600"
+      >
+        Ir al cuadro →
+      </Link>
+    </div>
+  );
+
+  const koAccessCards = (
+    <div className="grid gap-4 sm:grid-cols-3">
+      <Card
+        title="Mis grupos"
+        desc="Repasa tus pronósticos de la fase de grupos."
+        href={`/liga/${id}/grupos`}
+      />
+      <Card
+        title="Posiciones"
+        desc="La tabla real de los 12 grupos."
+        href={`/liga/${id}/posiciones`}
+      />
+      <Card
+        title="Partidos"
+        desc="Qué predijo cada quien (se revela al empezar)."
+        href={`/liga/${id}/partidos`}
+      />
+    </div>
+  );
+
+  // Botón para que el admin convierta la liga de grupos en eliminatorias.
+  const convertBlock = isAdmin && !isKO && tournamentStarted && (
+    <StartKnockoutButton leagueId={id} />
+  );
+
   const progressSection = isOwner && progress.length > 0 && (
     <section>
       <div className="mb-3 flex items-center gap-2">
@@ -277,7 +321,7 @@ export default async function LigaDashboard({
   );
 
   const accessCards = (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2">
       <Card
         title="Posiciones"
         desc="La tabla real de los 12 grupos."
@@ -287,11 +331,6 @@ export default async function LigaDashboard({
         title="Partidos"
         desc="Qué predijo cada quien (se revela al empezar)."
         href={`/liga/${id}/partidos`}
-      />
-      <Card
-        title="Eliminatorias"
-        desc="Predice los cruces reales hasta la final."
-        href={`/liga/${id}/cuadro`}
       />
     </div>
   );
@@ -307,8 +346,17 @@ export default async function LigaDashboard({
         </p>
       </div>
 
-      {tournamentStarted ? (
+      {isKO ? (
         <>
+          {knockoutBlock}
+          {liveSection}
+          {upcomingSection}
+          {rankingSection}
+          {koAccessCards}
+        </>
+      ) : tournamentStarted ? (
+        <>
+          {convertBlock}
           {liveSection}
           {upcomingSection}
           {groupsBlock}

@@ -39,6 +39,8 @@ export type Match = {
 export type ScorePrediction = {
   home: number | null;
   away: number | null;
+  /** Eliminatorias: equipo que el usuario cree que pasa por penales (si predijo empate). */
+  advance?: number | null;
 };
 
 /** Predicciones indexadas por match_id. */

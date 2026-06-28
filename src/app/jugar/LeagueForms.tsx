@@ -21,6 +21,19 @@ export function CreateLeagueForm() {
         placeholder="Ej. Los cracks del barrio"
         className="rounded-xl border border-white/10 bg-navy-950 px-3.5 py-3 text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-pitch-500 focus:ring-2 focus:ring-pitch-500/30"
       />
+      <label className="text-xs font-medium text-slate-400">
+        Tipo de liga
+        <select
+          name="type"
+          defaultValue="grupos"
+          className="mt-1 w-full rounded-xl border border-white/10 bg-navy-950 px-3.5 py-3 text-slate-100 outline-none transition focus:border-pitch-500 focus:ring-2 focus:ring-pitch-500/30"
+        >
+          <option value="grupos">Fase de grupos (5/3/1)</option>
+          <option value="eliminatorias">
+            Eliminatorias (120&apos; + bonus penales)
+          </option>
+        </select>
+      </label>
       {state?.error && <p className="text-sm text-red-300">{state.error}</p>}
       <button
         disabled={pending}

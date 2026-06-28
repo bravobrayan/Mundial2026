@@ -18,7 +18,7 @@ export default async function MisResultadosPage({
 
   const rows = await getMyResults(supabase, user.id, id);
   const total = rows.reduce((s, r) => s + r.points, 0);
-  const exactos = rows.filter((r) => r.points === 5).length;
+  const exactos = rows.filter((r) => r.exact).length;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">

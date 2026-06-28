@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import type { Team } from "@/lib/quiniela/types";
 import { Flag } from "@/components/Flag";
-import { saveResult, setMatchTeams } from "./actions";
+import { saveResult, setMatchTeams, setKnockoutRounds } from "./actions";
 
 export type AdminMatch = {
   id: number;
@@ -27,14 +27,21 @@ const STAGES: { key: string; label: string }[] = [
   { key: "final", label: "Final" },
 ];
 
+const KO_STAGES = STAGES.filter((s) => s.key !== "group");
+
 export function AdminBoard({
   matches,
   results,
   teams,
+  openRounds,
 }: {
   matches: AdminMatch[];
-  results: Record<number, { home: number; away: number; finished: boolean }>;
+  results: Record<
+    number,
+    { home: number; away: number; advance: number | null; finished: boolean }
+  >;
   teams: Team[];
+  openRounds: string[];
 }) {
   const [stage, setStage] = useState("group");
   const list = useMemo(
@@ -44,6 +51,8 @@ export function AdminBoard({
 
   return (
     <div>
+      <RoundsPanel initialOpen={openRounds} />
+
       <div className="mb-5 flex flex-wrap gap-2">
         {STAGES.map((s) => (
           <button
@@ -75,6 +84,59 @@ export function AdminBoard({
   );
 }
 
+/** Panel para abrir/cerrar las rondas de eliminatorias (global). */
+function RoundsPanel({ initialOpen }: { initialOpen: string[] }) {
+  const [open, setOpen] = useState<string[]>(initialOpen);
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+
+  function toggle(key: string) {
+    const next = open.includes(key)
+      ? open.filter((k) => k !== key)
+      : [...open, key];
+    setOpen(next);
+    setMsg(null);
+    start(async () => {
+      const res = await setKnockoutRounds(next);
+      setMsg(res.ok ? "Guardado ✓" : res.error);
+    });
+  }
+
+  return (
+    <div className="mb-5 rounded-xl border border-gold-400/20 bg-gold-400/5 p-3.5">
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="text-sm font-bold text-gold-400">
+          Rondas abiertas para predicción
+        </span>
+        <span className="text-xs text-pitch-500">{pending ? "…" : msg}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {KO_STAGES.map((s) => {
+          const on = open.includes(s.key);
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => toggle(s.key)}
+              disabled={pending}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
+                on
+                  ? "border-pitch-500 bg-pitch-500/20 text-white"
+                  : "border-white/10 bg-navy-900/60 text-slate-300 hover:bg-navy-800"
+              }`}
+            >
+              {on ? "🔓" : "🔒"} {s.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] text-slate-500">
+        Abre primero Dieciseisavos. Cuando terminen, abre Octavos, y así.
+      </p>
+    </div>
+  );
+}
+
 function AdminRow({
   match,
   result,
@@ -82,13 +144,16 @@ function AdminRow({
   knockout,
 }: {
   match: AdminMatch;
-  result?: { home: number; away: number; finished: boolean };
+  result?: { home: number; away: number; advance: number | null; finished: boolean };
   teams: Team[];
   knockout: boolean;
 }) {
   const [home, setHome] = useState<string>(result ? String(result.home) : "");
   const [away, setAway] = useState<string>(result ? String(result.away) : "");
   const [finished, setFinished] = useState<boolean>(result?.finished ?? false);
+  const [advanceId, setAdvanceId] = useState<number | null>(
+    result?.advance ?? null,
+  );
   const [homeId, setHomeId] = useState<number | null>(match.home_team_id);
   const [awayId, setAwayId] = useState<number | null>(match.away_team_id);
   const [pending, start] = useTransition();
@@ -121,12 +186,15 @@ function AdminRow({
         home: home === "" ? null : Number(home),
         away: away === "" ? null : Number(away),
         finished,
+        advanceTeamId: advanceId,
       });
       setMsg(res.ok ? "Resultado guardado ✓" : res.error);
     });
   }
 
   const teamsSet = homeId != null && awayId != null;
+  const isDraw =
+    home !== "" && away !== "" && Number(home) === Number(away);
 
   return (
     <div className="rounded-xl border border-white/10 bg-navy-900/50 p-3">
@@ -183,6 +251,28 @@ function AdminRow({
         </span>
       </div>
 
+      {knockout && isDraw && teamsSet && (
+        <div className="mt-3 border-t border-white/5 pt-3">
+          <p className="mb-2 text-[11px] uppercase tracking-wider text-gold-400">
+            Empate → ¿quién pasó por penales?
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <AdvancePick
+              active={advanceId === homeId}
+              onClick={() => setAdvanceId(homeId)}
+              name={teamName(homeId, match.home)}
+              flag={teamFlag(homeId, match.home)}
+            />
+            <AdvancePick
+              active={advanceId === awayId}
+              onClick={() => setAdvanceId(awayId)}
+              name={teamName(awayId, match.away)}
+              flag={teamFlag(awayId, match.away)}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
         <label className="flex cursor-pointer select-none items-center gap-2 text-sm">
           <button
@@ -217,6 +307,32 @@ function AdminRow({
         </div>
       </div>
     </div>
+  );
+}
+
+function AdvancePick({
+  active,
+  onClick,
+  name,
+  flag,
+}: {
+  active: boolean;
+  onClick: () => void;
+  name: string;
+  flag: string | null;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+        active
+          ? "border-pitch-500 bg-pitch-500/20 text-white"
+          : "border-white/10 bg-navy-950 text-slate-300 hover:bg-white/5"
+      }`}
+    >
+      <Flag flag={flag} className="w-5" /> {name}
+    </button>
   );
 }
 

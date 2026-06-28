@@ -39,24 +39,45 @@ export function KnockoutEditor({
   leagueId,
   matches,
   initialPreds,
+  openStages,
 }: {
   leagueId: string;
   matches: KnockoutMatch[];
   initialPreds: PredMap;
+  /** Rondas habilitadas por el admin (p.ej. ["r32"]). */
+  openStages: string[];
 }) {
   const [preds, setPreds] = useState<PredMap>(initialPreds);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const open = new Set(openStages);
 
   function setScore(id: number, side: "home" | "away", v: string) {
     const n = v === "" ? null : Math.max(0, Math.min(99, Number(v)));
-    setPreds((prev) => ({ ...prev, [id]: { ...prev[id], [side]: n } }));
+    setPreds((prev) => {
+      const cur = prev[id] ?? { home: null, away: null };
+      const next = { ...cur, [side]: n };
+      // Si deja de ser empate, limpiamos la selección de penales.
+      if (next.home == null || next.away == null || next.home !== next.away)
+        next.advance = null;
+      return { ...prev, [id]: next };
+    });
+  }
+
+  function setAdvance(id: number, teamId: number) {
+    setPreds((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] ?? { home: null, away: null }), advance: teamId },
+    }));
   }
 
   function onSave() {
     setMsg(null);
     const defined = matches.filter(
-      (m) => m.home_team_id != null && m.away_team_id != null,
+      (m) =>
+        open.has(m.stage) &&
+        m.home_team_id != null &&
+        m.away_team_id != null,
     );
     start(async () => {
       const res = await saveKnockout({
@@ -65,6 +86,7 @@ export function KnockoutEditor({
           matchId: m.id,
           home: preds[m.id]?.home ?? null,
           away: preds[m.id]?.away ?? null,
+          advance: preds[m.id]?.advance ?? null,
         })),
       });
       setMsg(
@@ -75,8 +97,9 @@ export function KnockoutEditor({
     });
   }
 
-  const anyDefined = matches.some(
-    (m) => m.home_team_id != null && m.away_team_id != null,
+  const anyOpenDefined = matches.some(
+    (m) =>
+      open.has(m.stage) && m.home_team_id != null && m.away_team_id != null,
   );
 
   return (
@@ -85,27 +108,39 @@ export function KnockoutEditor({
         {ROUNDS.map((round) => {
           const list = matches.filter((m) => m.stage === round.key);
           if (list.length === 0) return null;
+          const isOpen = open.has(round.key);
           return (
             <section key={round.key}>
-              <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-gold-400">
-                {round.label}
-              </h2>
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                {list.map((m) => (
-                  <MatchCard
-                    key={m.id}
-                    match={m}
-                    pred={preds[m.id] ?? { home: null, away: null }}
-                    onScore={setScore}
-                  />
-                ))}
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gold-400">
+                  {round.label}
+                </h2>
+                <div className="h-px flex-1 bg-gradient-to-r from-gold-400/30 to-transparent" />
+                {!isOpen && <span className="text-slate-500">🔒</span>}
               </div>
+              {isOpen ? (
+                <div className="flex flex-col gap-3">
+                  {list.map((m) => (
+                    <MatchCard
+                      key={m.id}
+                      match={m}
+                      pred={preds[m.id] ?? { home: null, away: null }}
+                      onScore={setScore}
+                      onAdvance={setAdvance}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-navy-900/40 px-4 py-6 text-center text-sm text-slate-500">
+                  🔒 Se abre cuando termine la ronda anterior.
+                </div>
+              )}
             </section>
           );
         })}
       </div>
 
-      {anyDefined && (
+      {anyOpenDefined && (
         <div className="sticky bottom-4 mt-8">
           <div className="mx-auto max-w-md rounded-2xl border border-white/10 bg-navy-900/90 p-3 backdrop-blur">
             <button
@@ -135,48 +170,101 @@ function MatchCard({
   match,
   pred,
   onScore,
+  onAdvance,
 }: {
   match: KnockoutMatch;
-  pred: { home: number | null; away: number | null };
+  pred: { home: number | null; away: number | null; advance?: number | null };
   onScore: (id: number, side: "home" | "away", v: string) => void;
+  onAdvance: (id: number, teamId: number) => void;
 }) {
   const defined = match.home_team_id != null && match.away_team_id != null;
   const lock = isMatchLocked(match.kickoff);
+  const isDraw =
+    pred.home != null && pred.away != null && pred.home === pred.away;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-navy-900/50 p-3">
-      <div className="mb-2 flex items-center justify-between text-[11px] text-slate-500">
-        <span>{match.label}</span>
-        <span>
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-navy-900/70 to-navy-900/40 transition hover:border-white/20">
+      <div className="flex items-center justify-between border-b border-white/5 px-4 py-2 text-[11px] font-medium text-slate-400">
+        <span className="rounded-md bg-white/5 px-2 py-0.5 text-slate-300">
+          {match.label}
+        </span>
+        <span className="flex items-center gap-1.5">
           {fmt.format(new Date(match.kickoff))}
-          {lock ? " · 🔒" : ""}
+          {lock && (
+            <span className="rounded bg-white/5 px-1.5 py-0.5 text-slate-400">
+              🔒 cerrado
+            </span>
+          )}
         </span>
       </div>
 
       {defined ? (
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <span className="flex items-center justify-end gap-1.5 text-right text-sm font-medium text-white">
-            <Flag flag={match.home?.flag} className="w-6" /> {match.home?.name}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <Score
-              value={pred.home}
-              onChange={(v) => onScore(match.id, "home", v)}
-              disabled={lock}
-            />
-            <span className="text-slate-500">-</span>
-            <Score
-              value={pred.away}
-              onChange={(v) => onScore(match.id, "away", v)}
-              disabled={lock}
-            />
+        <div className="px-4 py-4">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5">
+            <div className="flex items-center justify-end gap-2.5 text-right">
+              <span className="text-sm font-semibold leading-tight text-white sm:text-base">
+                {match.home?.name}
+              </span>
+              <Flag
+                flag={match.home?.flag}
+                className="w-9 shrink-0 rounded-sm shadow-sm ring-1 ring-white/10"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Score
+                value={pred.home}
+                onChange={(v) => onScore(match.id, "home", v)}
+                disabled={lock}
+                label={`Goles ${match.home?.name ?? "local"}`}
+              />
+              <span className="text-lg font-black text-slate-600">:</span>
+              <Score
+                value={pred.away}
+                onChange={(v) => onScore(match.id, "away", v)}
+                disabled={lock}
+                label={`Goles ${match.away?.name ?? "visitante"}`}
+              />
+            </div>
+
+            <div className="flex items-center gap-2.5 text-left">
+              <Flag
+                flag={match.away?.flag}
+                className="w-9 shrink-0 rounded-sm shadow-sm ring-1 ring-white/10"
+              />
+              <span className="text-sm font-semibold leading-tight text-white sm:text-base">
+                {match.away?.name}
+              </span>
+            </div>
           </div>
-          <span className="flex items-center gap-1.5 text-left text-sm font-medium text-white">
-            {match.away?.name} <Flag flag={match.away?.flag} className="w-6" />
-          </span>
+
+          {isDraw && (
+            <div className="mt-4 rounded-xl border border-gold-400/20 bg-gold-400/[0.06] p-3">
+              <p className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-gold-400">
+                Empate — ¿quién pasa por penales?{" "}
+                <span className="text-pitch-500">+3</span>
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <AdvanceButton
+                  active={pred.advance === match.home_team_id}
+                  disabled={lock}
+                  onClick={() => onAdvance(match.id, match.home_team_id!)}
+                  name={match.home?.name}
+                  flag={match.home?.flag}
+                />
+                <AdvanceButton
+                  active={pred.advance === match.away_team_id}
+                  disabled={lock}
+                  onClick={() => onAdvance(match.id, match.away_team_id!)}
+                  name={match.away?.name}
+                  flag={match.away?.flag}
+                />
+              </div>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="py-3 text-center text-sm text-slate-500">
+        <div className="px-4 py-6 text-center text-sm text-slate-500">
           Por definir — disponible cuando se conozca el cruce
         </div>
       )}
@@ -184,14 +272,48 @@ function MatchCard({
   );
 }
 
+function AdvanceButton({
+  active,
+  disabled,
+  onClick,
+  name,
+  flag,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  name?: string;
+  flag?: string | null;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`flex items-center justify-center gap-2 rounded-lg border px-2.5 py-2 text-xs font-semibold transition disabled:opacity-50 ${
+        active
+          ? "border-pitch-500 bg-pitch-500/20 text-white ring-1 ring-pitch-500/40"
+          : "border-white/10 bg-navy-950 text-slate-300 hover:border-white/25 hover:bg-white/5"
+      }`}
+    >
+      <Flag flag={flag} className="w-5 shrink-0 rounded-sm" />
+      <span className="truncate">{name}</span>
+      {active && <span className="text-pitch-500">✓</span>}
+    </button>
+  );
+}
+
 function Score({
   value,
   onChange,
   disabled,
+  label,
 }: {
   value: number | null;
   onChange: (v: string) => void;
   disabled?: boolean;
+  label?: string;
 }) {
   return (
     <input
@@ -201,8 +323,10 @@ function Score({
       max={99}
       value={value ?? ""}
       disabled={disabled}
+      aria-label={label}
+      placeholder="–"
       onChange={(e) => onChange(e.target.value)}
-      className="h-10 w-10 rounded-lg border border-white/10 bg-navy-950 text-center text-lg font-bold text-white outline-none focus:border-pitch-500 focus:ring-2 focus:ring-pitch-500/30 disabled:opacity-50"
+      className="h-12 w-12 rounded-xl border border-white/15 bg-navy-950 text-center text-2xl font-black text-white outline-none transition placeholder:text-slate-700 focus:border-pitch-500 focus:ring-2 focus:ring-pitch-500/30 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 sm:w-14"
     />
   );
 }
