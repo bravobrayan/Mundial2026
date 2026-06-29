@@ -7,6 +7,8 @@ export type LiveBannerMatch = {
   grp: string | null;
   label: string | null;
   kickoff: string;
+  home_team_id: number | null;
+  away_team_id: number | null;
   home: { name: string; flag: string | null } | null;
   away: { name: string; flag: string | null } | null;
 };
@@ -20,7 +22,12 @@ export function LiveMatchBanner({
   matches: LiveBannerMatch[];
   results: Map<
     number,
-    { home_goals: number; away_goals: number; finished?: boolean }
+    {
+      home_goals: number;
+      away_goals: number;
+      finished?: boolean;
+      advance_team_id?: number | null;
+    }
   >;
   isAdmin?: boolean;
 }) {
@@ -30,6 +37,14 @@ export function LiveMatchBanner({
       {matches.map((m) => {
         const r = results.get(m.id);
         const finished = (r?.finished ?? false) || isMatchFinished(m.kickoff);
+        const advTeam =
+          r == null || r.advance_team_id == null || r.home_goals !== r.away_goals
+            ? null
+            : r.advance_team_id === m.home_team_id
+              ? m.home
+              : r.advance_team_id === m.away_team_id
+                ? m.away
+                : null;
         return (
           <div
             key={m.id}
@@ -67,6 +82,15 @@ export function LiveMatchBanner({
                 <Flag flag={m.away?.flag} className="w-7" />
               </div>
             </div>
+
+            {advTeam && (
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-gold-400">
+                <Flag flag={advTeam.flag} className="w-4" />
+                <span>
+                  <strong>{advTeam.name}</strong> pasó por penales
+                </span>
+              </div>
+            )}
 
             {isAdmin && (
               <LiveResultEditor

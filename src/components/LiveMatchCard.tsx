@@ -20,6 +20,8 @@ export type LiveMatch = {
   grp: string | null;
   label: string | null;
   kickoff: string;
+  home_team_id: number | null;
+  away_team_id: number | null;
   home: { name: string; flag: string | null } | null;
   away: { name: string; flag: string | null } | null;
 };
@@ -39,7 +41,14 @@ export function LiveMatchCard({
   match: LiveMatch;
   members: { user_id: string; display_name: string }[];
   preds: Pred[];
-  result: { home_goals: number; away_goals: number; finished?: boolean } | undefined;
+  result:
+    | {
+        home_goals: number;
+        away_goals: number;
+        finished?: boolean;
+        advance_team_id?: number | null;
+      }
+    | undefined;
   meId: string;
   finished: boolean;
   isAdmin?: boolean;
@@ -82,6 +91,18 @@ export function LiveMatchCard({
   const me = members.find((m) => m.user_id === meId);
   const minePred = predByUser.get(meId);
   const playedCount = predByUser.size;
+
+  // Equipo que pasó por penales (lo definió el admin) en empates de eliminatoria.
+  const advTeam =
+    result == null ||
+    result.advance_team_id == null ||
+    result.home_goals !== result.away_goals
+      ? null
+      : result.advance_team_id === match.home_team_id
+        ? match.home
+        : result.advance_team_id === match.away_team_id
+          ? match.away
+          : null;
 
   return (
     <div
@@ -129,6 +150,15 @@ export function LiveMatchCard({
           <Flag flag={match.away?.flag} className="w-7" />
         </div>
       </div>
+
+      {advTeam && (
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-sm text-gold-400">
+          <Flag flag={advTeam.flag} className="w-5" />
+          <span>
+            <strong>{advTeam.name}</strong> pasó por penales
+          </span>
+        </div>
+      )}
 
       {/* Pronósticos */}
       <div className="mt-4 border-t border-white/10 pt-3">

@@ -39,7 +39,7 @@ export default async function HomePage() {
   const { data: liveData } = await supabase
     .from("matches")
     .select(
-      "id, grp, label, kickoff, home:home_team_id(name,flag), away:away_team_id(name,flag)",
+      "id, grp, label, kickoff, home_team_id, away_team_id, home:home_team_id(name,flag), away:away_team_id(name,flag)",
     )
     .lte("kickoff", new Date(nowMs).toISOString())
     .gte("kickoff", new Date(nowMs - 4 * 3_600_000).toISOString())
@@ -47,12 +47,17 @@ export default async function HomePage() {
   const liveMatches = (liveData ?? []) as unknown as LiveBannerMatch[];
   let liveResults = new Map<
     number,
-    { home_goals: number; away_goals: number; finished?: boolean }
+    {
+      home_goals: number;
+      away_goals: number;
+      finished?: boolean;
+      advance_team_id?: number | null;
+    }
   >();
   if (liveMatches.length > 0) {
     const { data: res } = await supabase
       .from("results")
-      .select("match_id, home_goals, away_goals, finished")
+      .select("match_id, home_goals, away_goals, finished, advance_team_id")
       .in(
         "match_id",
         liveMatches.map((m) => m.id),
