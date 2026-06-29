@@ -106,7 +106,12 @@ export function KnockoutEditor({
     <div>
       <div className="flex flex-col gap-8">
         {ROUNDS.map((round) => {
-          const list = matches.filter((m) => m.stage === round.key);
+          const list = matches
+            .filter((m) => m.stage === round.key)
+            .sort(
+              (a, b) =>
+                new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime(),
+            );
           if (list.length === 0) return null;
           const isOpen = open.has(round.key);
           return (
