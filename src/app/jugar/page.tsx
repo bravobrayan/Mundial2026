@@ -101,6 +101,20 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Estadísticas */}
+      <Link
+        href="/jugar/estadisticas"
+        className="mt-6 flex items-center justify-between rounded-2xl border border-gold-400/25 bg-gradient-to-r from-gold-400/10 to-navy-900/40 px-5 py-4 transition hover:border-gold-400/50"
+      >
+        <div>
+          <div className="font-semibold text-white">📊 Estadísticas del Mundial</div>
+          <div className="text-sm text-slate-400">
+            Goleadores y resultados en tiempo casi real.
+          </div>
+        </div>
+        <span className="text-gold-400">→</span>
+      </Link>
+
       {/* Próximos partidos */}
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
