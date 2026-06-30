@@ -12,6 +12,8 @@ type BoardRow = {
   away_goals: number | null;
   points: number | null;
   revealed: boolean;
+  advance_name: string | null;
+  advance_flag: string | null;
 };
 
 type MatchRow = {
@@ -20,6 +22,8 @@ type MatchRow = {
   label: string | null;
   kickoff: string;
   stadium: string | null;
+  home_team_id: number | null;
+  away_team_id: number | null;
   home: { name: string; flag: string | null } | null;
   away: { name: string; flag: string | null } | null;
 };
@@ -51,7 +55,7 @@ export default async function PartidosPage({
   const { data: matchesData } = await supabase
     .from("matches")
     .select(
-      "id, grp, label, kickoff, stadium, home:home_team_id(name,flag), away:away_team_id(name,flag)",
+      "id, grp, label, kickoff, stadium, home_team_id, away_team_id, home:home_team_id(name,flag), away:away_team_id(name,flag)",
     )
     .gte("kickoff", since)
     .order("kickoff")
@@ -68,7 +72,7 @@ export default async function PartidosPage({
         .eq("league_id", id),
       supabase
         .from("results")
-        .select("match_id, home_goals, away_goals")
+        .select("match_id, home_goals, away_goals, advance_team_id")
         .in("match_id", matchIds),
     ]);
 
@@ -79,7 +83,19 @@ export default async function PartidosPage({
     arr.push(r);
     byMatch.set(r.match_id, arr);
   }
-  const results = new Map((resultsData ?? []).map((r) => [r.match_id, r]));
+  const results = new Map<
+    number,
+    { home_goals: number; away_goals: number; advance_team_id: number | null }
+  >(
+    (resultsData ?? []).map((r) => [
+      r.match_id,
+      {
+        home_goals: r.home_goals,
+        away_goals: r.away_goals,
+        advance_team_id: r.advance_team_id ?? null,
+      },
+    ]),
+  );
 
   const now = Date.now();
 
@@ -99,6 +115,17 @@ export default async function PartidosPage({
           const locked = now >= new Date(m.kickoff).getTime();
           const showAll = arePredsRevealed(!!m.grp, m.kickoff, now);
           const result = results.get(m.id);
+          // Equipo que pasó por penales en el resultado real (empate).
+          const advTeam =
+            result == null ||
+            result.advance_team_id == null ||
+            result.home_goals !== result.away_goals
+              ? null
+              : result.advance_team_id === m.home_team_id
+                ? m.home
+                : result.advance_team_id === m.away_team_id
+                  ? m.away
+                  : null;
           const mine = preds.find((p) => p.user_id === user.id);
           const revealed = preds
             .filter((p) => p.revealed)
@@ -138,6 +165,15 @@ export default async function PartidosPage({
                 </div>
               </div>
 
+              {advTeam && (
+                <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gold-400">
+                  <Flag flag={advTeam.flag} className="w-4" />
+                  <span>
+                    <strong>{advTeam.name}</strong> pasó por penales
+                  </span>
+                </div>
+              )}
+
               {/* Pronósticos */}
               <div className="mt-3 border-t border-white/5 pt-3">
                 {preds.length === 0 ? (
@@ -174,6 +210,13 @@ export default async function PartidosPage({
                           )}
                         </span>
                         <span className="flex items-center gap-2">
+                          {p.home_goals === p.away_goals && p.advance_name && (
+                            <span className="flex items-center gap-1 rounded bg-gold-400/15 px-1.5 py-0.5 text-[10px] font-medium text-gold-400">
+                              <Flag flag={p.advance_flag} className="w-3.5" />
+                              <span className="hidden sm:inline">pasa</span>{" "}
+                              {p.advance_name}
+                            </span>
+                          )}
                           <span className="font-mono tabular-nums text-white">
                             {p.home_goals}-{p.away_goals}
                           </span>
