@@ -1,6 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
+// minimumScale evita que iOS Safari deje la página "atascada" en zoom
+// alejado (se vería cortada); el zoom para ACERCAR sigue permitido.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
