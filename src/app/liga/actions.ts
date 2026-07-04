@@ -170,6 +170,21 @@ export async function saveKnockout(input: {
       };
     });
 
+  // Regla: empate SIN pick de penales no se guarda (obligatorio elegirlo).
+  const drawsWithoutPick = rows.filter(
+    (r) =>
+      r.home_goals != null &&
+      r.away_goals != null &&
+      r.home_goals === r.away_goals &&
+      r.advance_team_id == null,
+  );
+  if (drawsWithoutPick.length > 0)
+    return {
+      ok: false,
+      error:
+        "En los empates es obligatorio elegir quién pasa por penales. Revisa tus pronósticos con empate.",
+    };
+
   if (rows.length > 0) {
     const { error } = await supabase
       .from("predictions")

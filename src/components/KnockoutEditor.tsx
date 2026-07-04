@@ -50,7 +50,23 @@ export function KnockoutEditor({
   const [preds, setPreds] = useState<PredMap>(initialPreds);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // Partidos con empate SIN pick de penales (se marcan en rojo al guardar).
+  const [penErrors, setPenErrors] = useState<Set<number>>(new Set());
   const open = new Set(openStages);
+
+  // Rondas cuyos partidos YA se jugaron todos arrancan plegadas,
+  // para que la ronda por llenar quede protagonista.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    const c: Record<string, boolean> = {};
+    for (const r of ROUNDS) {
+      const list = matches.filter((m) => m.stage === r.key);
+      if (list.length > 0 && list.every((m) => isMatchLocked(m.kickoff)))
+        c[r.key] = true;
+    }
+    return c;
+  });
+  const toggleRound = (key: string) =>
+    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
 
   function setScore(id: number, side: "home" | "away", v: string) {
     const n = v === "" ? null : Math.max(0, Math.min(99, Number(v)));
@@ -69,6 +85,12 @@ export function KnockoutEditor({
       ...prev,
       [id]: { ...(prev[id] ?? { home: null, away: null }), advance: teamId },
     }));
+    setPenErrors((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   }
 
   function onSave() {
@@ -79,6 +101,30 @@ export function KnockoutEditor({
         m.home_team_id != null &&
         m.away_team_id != null,
     );
+
+    // Regla: si predices empate, es OBLIGATORIO elegir quién pasa por penales.
+    const missingPen = defined.filter((m) => {
+      if (isMatchLocked(m.kickoff)) return false;
+      const p = preds[m.id];
+      return (
+        p?.home != null &&
+        p?.away != null &&
+        p.home === p.away &&
+        p.advance == null
+      );
+    });
+    if (missingPen.length > 0) {
+      setPenErrors(new Set(missingPen.map((m) => m.id)));
+      setMsg({
+        ok: false,
+        text: `⚠️ Pusiste empate sin elegir quién pasa por penales en: ${missingPen
+          .map((m) => `${m.home?.name} vs ${m.away?.name}`)
+          .join(", ")}.`,
+      });
+      return;
+    }
+    setPenErrors(new Set());
+
     start(async () => {
       const res = await saveKnockout({
         leagueId,
@@ -114,27 +160,59 @@ export function KnockoutEditor({
             );
           if (list.length === 0) return null;
           const isOpen = open.has(round.key);
+          const isCollapsed = collapsed[round.key] ?? false;
+          const allPlayed =
+            list.length > 0 && list.every((m) => isMatchLocked(m.kickoff));
           return (
             <section key={round.key}>
-              <div className="mb-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => isOpen && toggleRound(round.key)}
+                disabled={!isOpen}
+                aria-expanded={!isCollapsed}
+                className="mb-4 flex w-full items-center gap-3 text-left"
+              >
                 <h2 className="text-sm font-bold uppercase tracking-wider text-gold-400">
                   {round.label}
                 </h2>
+                {allPlayed && (
+                  <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                    ✓ jugada
+                  </span>
+                )}
                 <div className="h-px flex-1 bg-gradient-to-r from-gold-400/30 to-transparent" />
-                {!isOpen && <span className="text-slate-500">🔒</span>}
-              </div>
+                {!isOpen ? (
+                  <span className="text-slate-500">🔒</span>
+                ) : (
+                  <span className="text-xs text-slate-400">
+                    {isCollapsed ? "▸ mostrar" : "▾ ocultar"}
+                  </span>
+                )}
+              </button>
               {isOpen ? (
-                <div className="flex flex-col gap-3">
-                  {list.map((m) => (
-                    <MatchCard
-                      key={m.id}
-                      match={m}
-                      pred={preds[m.id] ?? { home: null, away: null }}
-                      onScore={setScore}
-                      onAdvance={setAdvance}
-                    />
-                  ))}
-                </div>
+                isCollapsed ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleRound(round.key)}
+                    className="w-full rounded-2xl border border-white/10 bg-navy-900/40 px-4 py-3 text-center text-sm text-slate-400 transition hover:bg-navy-900/70"
+                  >
+                    {list.length} partidos {allPlayed ? "jugados" : ""} · toca
+                    para ver ▾
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {list.map((m) => (
+                      <MatchCard
+                        key={m.id}
+                        match={m}
+                        pred={preds[m.id] ?? { home: null, away: null }}
+                        onScore={setScore}
+                        onAdvance={setAdvance}
+                        penError={penErrors.has(m.id)}
+                      />
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="rounded-2xl border border-dashed border-white/10 bg-navy-900/40 px-4 py-6 text-center text-sm text-slate-500">
                   🔒 Se abre cuando termine la ronda anterior.
@@ -176,11 +254,13 @@ function MatchCard({
   pred,
   onScore,
   onAdvance,
+  penError = false,
 }: {
   match: KnockoutMatch;
   pred: { home: number | null; away: number | null; advance?: number | null };
   onScore: (id: number, side: "home" | "away", v: string) => void;
   onAdvance: (id: number, teamId: number) => void;
+  penError?: boolean;
 }) {
   const defined = match.home_team_id != null && match.away_team_id != null;
   const lock = isMatchLocked(match.kickoff);
@@ -244,10 +324,20 @@ function MatchCard({
           </div>
 
           {isDraw && (
-            <div className="mt-4 rounded-xl border border-gold-400/20 bg-gold-400/[0.06] p-3">
-              <p className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-gold-400">
-                Empate — ¿quién pasa por penales?{" "}
-                <span className="text-pitch-500">+3</span>
+            <div
+              className={`mt-4 rounded-xl border p-3 ${
+                penError
+                  ? "border-red-500/60 bg-red-500/10 ring-1 ring-red-500/30"
+                  : "border-gold-400/20 bg-gold-400/[0.06]"
+              }`}
+            >
+              <p
+                className={`mb-2.5 text-center text-[11px] font-semibold uppercase tracking-wider ${
+                  penError ? "text-red-300" : "text-gold-400"
+                }`}
+              >
+                {penError ? "⚠️ Obligatorio: " : "Empate — "}¿quién pasa por
+                penales? <span className="text-pitch-500">+3</span>
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <AdvanceButton

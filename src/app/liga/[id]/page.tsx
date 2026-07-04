@@ -13,6 +13,7 @@ import {
 import { Podium } from "@/components/Podium";
 import { RankingTable, type RankingRow } from "@/components/RankingTable";
 import { LiveMatchCard, type LiveMatch } from "@/components/LiveMatchCard";
+import { RoundAnnouncement } from "@/components/RoundAnnouncement";
 import { StartKnockoutButton } from "./StartKnockoutButton";
 
 export default async function LigaDashboard({
@@ -82,6 +83,70 @@ export default async function LigaDashboard({
 
   // Partidos EN VIVO (empezaron en las últimas ~2.5h)
   const nowMs = Date.now();
+
+  // Anuncio de ronda de eliminatorias abierta (pop-up): la ronda abierta más
+  // profunda con cruces definidos y partidos aún por empezar que el usuario
+  // NO haya pronosticado completa.
+  let announce: { round: string; title: string; missing: number } | null = null;
+  if (isKO) {
+    const ORDER = ["r32", "r16", "qf", "sf", "third", "final"];
+    const TITLES: Record<string, string> = {
+      r32: "¡Se abrieron los Dieciseisavos!",
+      r16: "¡Se abrieron los Octavos de final!",
+      qf: "¡Se abrieron los Cuartos de final!",
+      sf: "¡Se abrieron las Semifinales!",
+      third: "¡Se abrió el partido por el 3er puesto!",
+      final: "¡Se abrió la Final!",
+    };
+    const [{ data: openStr }, { data: koMatches }] = await Promise.all([
+      supabase.rpc("get_knockout_rounds"),
+      supabase
+        .from("matches")
+        .select("id, stage, kickoff, home_team_id, away_team_id")
+        .neq("stage", "group"),
+    ]);
+    const openRoundsSet = new Set(
+      String(openStr ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+    const pending = (stage: string) =>
+      (koMatches ?? []).filter(
+        (m) =>
+          m.stage === stage &&
+          m.home_team_id != null &&
+          m.away_team_id != null &&
+          new Date(m.kickoff).getTime() > nowMs,
+      );
+    const candidates = ORDER.filter(
+      (k) => openRoundsSet.has(k) && pending(k).length > 0,
+    );
+    const deepest = candidates[candidates.length - 1];
+    if (deepest) {
+      const ids = pending(deepest).map((m) => m.id);
+      const { data: myPreds } = await supabase
+        .from("predictions")
+        .select("match_id, home_goals, away_goals, advance_team_id")
+        .eq("user_id", user.id)
+        .eq("league_id", id)
+        .in("match_id", ids);
+      // Completo = marcador puesto Y, si es empate, con pick de penales.
+      const filled = new Set(
+        (myPreds ?? [])
+          .filter(
+            (p) =>
+              p.home_goals != null &&
+              p.away_goals != null &&
+              (p.home_goals !== p.away_goals || p.advance_team_id != null),
+          )
+          .map((p) => p.match_id),
+      );
+      const missing = ids.filter((i) => !filled.has(i)).length;
+      if (missing > 0)
+        announce = { round: deepest, title: TITLES[deepest], missing };
+    }
+  }
   const { data: liveData } = await supabase
     .from("matches")
     .select(
@@ -414,6 +479,13 @@ export default async function LigaDashboard({
 
       {isKO ? (
         <>
+          {announce && (
+            <RoundAnnouncement
+              leagueId={id}
+              title={announce.title}
+              missing={announce.missing}
+            />
+          )}
           {knockoutBlock}
           {liveSection}
           {upcomingSection}
