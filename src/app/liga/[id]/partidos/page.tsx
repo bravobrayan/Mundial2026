@@ -63,7 +63,7 @@ export default async function PartidosPage({
   const matches = (matchesData ?? []) as unknown as MatchRow[];
   const matchIds = matches.length ? matches.map((m) => m.id) : [-1];
 
-  const [{ data: board }, { count: members }, { data: resultsData }] =
+  const [{ data: board }, { count: members }, { data: resultsData }, { data: profile }] =
     await Promise.all([
       supabase.rpc("league_board", { p_league: id, p_matches: matchIds }),
       supabase
@@ -74,7 +74,13 @@ export default async function PartidosPage({
         .from("results")
         .select("match_id, home_goals, away_goals, advance_team_id")
         .in("match_id", matchIds),
+      supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle(),
     ]);
+  const isAdmin = profile?.is_admin ?? false;
 
   const rows = (board ?? []) as BoardRow[];
   const byMatch = new Map<number, BoardRow[]>();
@@ -104,16 +110,27 @@ export default async function PartidosPage({
       <AutoRefresh />
       <h1 className="text-2xl font-black text-white">Partidos de la liga</h1>
       <p className="mb-6 text-sm text-slate-400">
-        Los pronósticos de cada quien se{" "}
-        <strong className="text-white">revelan al empezar el partido</strong>{" "}
-        (antes solo ves cuántos ya jugaron). 🔥
+        {isAdmin ? (
+          <>
+            Como <strong className="text-gold-400">admin</strong> ves todos los
+            pronósticos desde que se ingresan; para los demás se revelan al
+            empezar el partido. 👁️
+          </>
+        ) : (
+          <>
+            Los pronósticos de cada quien se{" "}
+            <strong className="text-white">revelan al empezar el partido</strong>{" "}
+            (antes solo ves cuántos ya jugaron). 🔥
+          </>
+        )}
       </p>
 
       <div className="flex flex-col gap-4">
         {matches.map((m) => {
           const preds = byMatch.get(m.id) ?? [];
           const locked = now >= new Date(m.kickoff).getTime();
-          const showAll = arePredsRevealed(!!m.grp, m.kickoff, now);
+          const revealedToAll = arePredsRevealed(!!m.grp, m.kickoff, now);
+          const showAll = revealedToAll || isAdmin;
           const result = results.get(m.id);
           // Equipo que pasó por penales en el resultado real (empate).
           const advTeam =
@@ -194,6 +211,11 @@ export default async function PartidosPage({
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1.5">
+                    {!revealedToAll && (
+                      <p className="text-[11px] text-gold-400">
+                        👁️ Vista admin: los demás aún no ven estos pronósticos
+                      </p>
+                    )}
                     {revealed.map((p) => (
                       <div
                         key={p.user_id}
